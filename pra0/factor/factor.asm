@@ -11,8 +11,8 @@
 
 DATOS SEGMENT 
 
-DATO_1  DB     2
-DATO_2  DB     3
+DATO_1  DB     5
+DATO_2  DB     2
 
 DATOS ENDS 
 

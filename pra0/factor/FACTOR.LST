@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.0	    02/08/19 18:46:47	    Page 1
+Turbo Assembler	 Version 2.0	    02/15/19 17:37:31	    Page 1
 factor.asm
 
 
@@ -16,8 +16,8 @@ factor.asm
      11
      12	0000			     DATOS SEGMENT
      13
-     14	0000  02		     DATO_1  DB	    2
-     15	0001  03		     DATO_2  DB	    3
+     14	0000  05		     DATO_1  DB	    5
+     15	0001  02		     DATO_2  DB	    2
      16
      17	0002			     DATOS ENDS
      18
@@ -60,7 +60,7 @@ factor.asm
      55	0011  BC 0040			 MOV SP, 64
      56
      57					 ; FIN DE LAS INICIALIZACIONES
-Turbo Assembler	 Version 2.0	    02/08/19 18:46:47	    Page 2
+Turbo Assembler	 Version 2.0	    02/15/19 17:37:31	    Page 2
 factor.asm
 
 
@@ -104,7 +104,7 @@ factor.asm
      94	003C			     CODE ENDS
      95				     ; FIN DEL PROGRAMA	INDICANDO DONDE	COMIENZA LA EJECUCION
      96				     END START
-Turbo Assembler	 Version 2.0	    02/08/19 18:46:47	    Page 3
+Turbo Assembler	 Version 2.0	    02/15/19 17:37:31	    Page 3
 Symbol Table
 
 
@@ -112,9 +112,9 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "02/08/19"
+??DATE				  Text	 "02/15/19"
 ??FILENAME			  Text	 "factor  "
-??TIME				  Text	 "18:46:47"
+??TIME				  Text	 "17:37:31"
 ??VERSION			  Number 0200
 @CPU				  Text	 0101H
 @CURSEG				  Text	 CODE
