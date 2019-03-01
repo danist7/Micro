@@ -1,0 +1,20 @@
+
+PRÁCTICAS DE MICRO
+
+Copiar C:\Program Files (x86)\DosBox en la raíz de C
+dosbox.exe -->  help : muestra comandos
+			    cd 
+				dir : pwd
+				del
+				
+Para ensamblar --> "tasm /zi hola.asm" --> crea factor.obj
+Para enlazar   --> "tlink /v hola"     --> crea hola.exe
+Para debuggear --> "td hola.exe"       --> inicia td
+	
+	Cambiar vista : alt-v, c, f5
+	Acceder menu  : alt + incial
+	Cambiar tabla : tab 
+	Ejecuta todo  : F9
+	Ejecuta 1 a 1 : F7
+	Ventana abajo-derecha : click derecho -> Goto
+	Salir : alt-x
