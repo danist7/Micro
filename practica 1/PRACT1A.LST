@@ -1,0 +1,103 @@
+Turbo Assembler	 Version 2.0	    03/01/19 18:05:55	    Page 1
+pract1a.asm
+
+
+
+      1				     ;**************************************************************************
+      2				     ; EJERCICIO 1A PRÁCTICA 1
+      3				     ;**************************************************************************
+      4				     ; DEFINICION DEL SEGMENTO DE DATOS
+      5	0000			     DATOS SEGMENT
+      6
+      7	0000			     DATOS ENDS
+      8
+      9
+     10				     ;**************************************************************************
+     11				     ; DEFINICION DEL SEGMENTO DE PILA
+     12
+     13	0000			     PILA SEGMENT STACK	"STACK"
+     14	0000  40*(00)			     DB	40H DUP	(0)		     ;64 bytes inicializados a 0
+     15	0040			     PILA ENDS
+     16
+     17				     ;**************************************************************************
+     18				     ; DEFINICION DEL SEGMENTO EXTRA
+     19
+     20	0000			     EXTRA     SEGMENT
+     21	0000  0000 0000			 RESULT	   DW 0,0		  ; 2 PALABRAS ( 4 BYTES )
+     22	0004			     EXTRA ENDS
+     23
+     24				     ;**************************************************************************
+     25				     ; DEFINICION DEL SEGMENTO DE CODIGO
+     26
+     27	0000			     CODE SEGMENT
+     28					     ASSUME CS:	CODE, DS: DATOS, ES: EXTRA, SS:	PILA
+     29
+     30				     ; COMIENZO	DEL PROCEDIMIENTO PRINCIPAL
+     31	0000			     INICIO PROC
+     32
+     33					     ; INICIALIZA LOS REGISTROS	DE SEGMENTO CON	SU VALOR
+     34	0000  B8 6000			     MOV AX, 6000h
+     35	0003  8E D8			     MOV DS, AX
+     36
+     37	0005  B8 0000s			     MOV AX, PILA
+     38	0008  8E D0			     MOV SS, AX
+     39
+     40	000A  B8 5000			     MOV AX, 5000h
+     41	000D  8E C0			     MOV ES, AX
+     42
+     43	000F  BC 0040			     MOV SP, 64	; CARGA	EL PUNTERO DE PILA CON EL VALOR	MAS ALTO
+     44
+     45				     ; FIN DE LAS INICIALIZACIONES
+     46
+     47				     ; COMIENZO	DEL PROGRAMA
+     48
+     49	0012  B8 0015			     MOV AX, 15h
+     50	0015  BB 00BB			     MOV BX, 0BBh
+     51	0018  B9 3412			     MOV CX, 3412h
+     52	001B  8B D1			     MOV DX, CX
+     53	001D  8A 3E 5536		     MOV BH, DS:[5536h]
+     54	0021  8A 1E 5537		     MOV BL, DS:[5537h]
+     55	0025  26: 88 2E	0005		     MOV ES:[5h], CH
+     56	002A  8B 04			     MOV     AX, [SI]
+     57	002C  8B 5E 0A			     MOV BX, [BP + 0Ah]
+Turbo Assembler	 Version 2.0	    03/01/19 18:05:55	    Page 2
+pract1a.asm
+
+
+
+     58
+     59
+     60				     ; FIN DEL PROGRAMA
+     61	002F  B8 4C00			     MOV AX, 4C00H
+     62	0032  CD 21			     INT 21H
+     63	0034			     INICIO ENDP
+     64				     ; FIN DEL SEGMENTO	DE CODIGO
+     65	0034			     CODE ENDS
+     66				     ; FIN DEL PROGRAMA	INDICANDO DONDE	COMIENZA LA EJECUCION
+     67				     END INICIO
+Turbo Assembler	 Version 2.0	    03/01/19 18:05:55	    Page 3
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "03/01/19"
+??FILENAME			  Text	 "pract1a "
+??TIME				  Text	 "18:05:55"
+??VERSION			  Number 0200
+@CPU				  Text	 0101H
+@CURSEG				  Text	 CODE
+@FILENAME			  Text	 PRACT1A
+@WORDSIZE			  Text	 2
+INICIO				  Near	 CODE:0000
+RESULT				  Word	 EXTRA:0000
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+CODE				  16  0034 Para	  none
+DATOS				  16  0000 Para	  none
+EXTRA				  16  0004 Para	  none
+PILA				  16  0040 Para	  Stack	  STACK
+
