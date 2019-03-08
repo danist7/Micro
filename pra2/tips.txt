@@ -1,0 +1,3 @@
+Números entre el -16 y el 15 (5 bits)
+Para imprimir, vas dividiendo entre 10 y cogiendo el resto, hasta llegar a cociente 0
+Para leer por teclado, vas multiplicando desde el último número por potencias de 10 y sumando, empezando en 10^0.
