@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 2.0	    03/19/19 19:17:33	    Page 1
+Turbo Assembler	 Version 2.0	    03/20/19 19:36:14	    Page 1
 det.asm
 
 
@@ -14,10 +14,10 @@ det.asm
       9
      10	0000			     DATOS SEGMENT
      11
-     12	0000  01 02 03 FE 03 01	FF+  A	     DB	     1,	2, 3, -2, 3, 1,	-1, -1,	-1
-     13	      FF FF
-     14	0009  53 65 6C 65 63 63	69+  Texto DB "Seleccione una opcion:",13,10, "1) Calcular el determinante con valores por defecto",+
-     15	      6F 6E 65 20 75 6E	61+  13,10, "2)	Calcular el determinante con valores introducidos por teclado",	13, 10,	'$'
+     12	0000  01 02 03 01 03 03	01+	     A	     DB	     1,	2, 3, 1, 3, 3, 1, 1, 1
+     13	      01 01
+     14	0009  53 65 6C 65 63 63	69+	     TEXTO DB "Seleccione una opcion:",	13, 10,	"1) Calcular el	determinante con valores por+
+     15	      6F 6E 65 20 75 6E	61+  defecto",13,10, "2) Calcular el determinante con valores introducidos por teclado", 13, 10, '$'
      16	      20 6F 70 63 69 6F	6E+
      17	      3A 0D 0A 31 29 20	43+
      18	      61 6C 63 75 6C 61	72+
@@ -37,275 +37,475 @@ det.asm
      32	      64 6F 73 20 70 6F	72+
      33	      20 74 65 63 6C 61	64+
      34	      6F 0D 0A 24
-     35	0099  03*(??)		     OPCION DB 3 DUP(?)		     ; Guarda la opcion	escrita	por teclado en OPCION[2]
-     36	009C  03*(??)		     NUMERO DB 3 DUP(?)		     ; Guarda los dígitos de un número
-     37	009F  20 20 20 20 20	     ESPACIOS DB 32, 32, 32, 32, 32
-     38	00A4  00		     CONTADOR DB 0H
-     39	00A5			     DATOS ENDS
-     40
-     41
-     42				     ; DEFINICION DEL SEGMENTO DE PILA
-     43
-     44	0000			     PILA    SEGMENT STACK "STACK"
-     45	0000  40*(00)			 DB   40H DUP (0)
-     46	0040			     PILA ENDS
-     47
-     48
-     49				     ; DEFINICION DEL SEGMENTO EXTRA
-     50
-     51	0000			     EXTRA     SEGMENT
-     52	0000  0000 0000			 RESULT	   DW 0,0		  ; 2 PALABRAS ( 4 BYTES )
-     53	0004			     EXTRA ENDS
-     54
-     55
-     56				     ; DEFINICION DEL SEGMENTO DE CODIGO
-     57
-Turbo Assembler	 Version 2.0	    03/19/19 19:17:33	    Page 2
+     35	0099  03*(??)			     OPCION DB 3 DUP(?)		     ; Guarda la opcion	escrita	por teclado en OPCION[2]
+     36	009C  14*(??)			     NUMERO DB 20 DUP(?)	     ; Guarda los dígitos de un número
+     37	00B0  0000			     NUM_DIGITOS DW 0H		     ;
+     38	00B2  20 20 20 20 20 7C	20+	     ESPACIOS DB "     |	   |", 13, 10,"|A|= |		|=     ", 13, 10,"     |    +
+     39	      20 20 20 20 20 20	20+  |", 13, 10, '$'
+     40	      20 20 20 7C 0D 0A	7C+
+     41	      41 7C 3D 20 7C 20	20+
+     42	      20 20 20 20 20 20	20+
+     43	      20 20 7C 3D 20 20	20+
+     44	      20 20 0D 0A 20 20	20+
+     45	      20 20 7C 20 20 20	20+
+     46	      20 20 20 20 20 20	20+
+     47	      7C 0D 0A 24
+     48	00F5  0000			     CONTADOR DW 0H
+     49	00F7  0D 0A 49 6E 74 72	6F+	     OPCION2 DB	13, 10,	"Introduzca los	9 elementos de la matriz uno por uno, maximo 15	y   +
+     50	      64 75 7A 63 61 20	6C+  minimo -16, separandolos con un salto de linea, y empezando de izquierda a	derecha	y de arriba +
+     51	      6F 73 20 39 20 65	6C+  a abajo :", 13, 10, '$'
+     52	      65 6D 65 6E 74 6F	73+
+     53	      20 64 65 20 6C 61	20+
+     54	      6D 61 74 72 69 7A	20+
+     55	      75 6E 6F 20 70 6F	72+
+     56	      20 75 6E 6F 2C 20	6D+
+     57	      61 78 69 6D 6F 20	31+
+Turbo Assembler	 Version 2.0	    03/20/19 19:36:14	    Page 2
 det.asm
 
 
 
-     58	0000			     CODE    SEGMENT
-     59					 ASSUME	CS:CODE, DS:DATOS, ES: EXTRA, SS:PILA
-     60
-     61	0000  0000		     FACT_DATO_1  DW	   0
-     62
-     63				     ; COMIENZO	DEL PROCEDIMIENTO PRINCIPAL
-     64
-     65	0002			     START PROC	NEAR
-     66					 ;INICIALIZA LOS REGISTROS DE SEGMENTO CON SUS VALORES
-     67	0002  B8 0000s			 MOV AX, DATOS
-     68	0005  8E D8			 MOV DS, AX
-     69
-     70	0007  B8 0000s			 MOV AX, PILA
-     71	000A  8E D0			 MOV SS, AX
-     72
-     73	000C  B8 0000s			 MOV AX, EXTRA
-     74	000F  8E C0			 MOV ES, AX
-     75
-     76					 ; CARGA EL PUNTERO DE PILA CON	EL VALOR MAS ALTO
-     77	0011  BC 0040			 MOV SP, 64
-     78
-     79					 ; FIN DE LAS INICIALIZACIONES
-     80
-     81
-     82	0014  BA 0009r			     MOV DX, OFFSET Texto	     ; DX = offset al inicio del texto a imprimir
-     83	0017  B4 09			     MOV AH, 9					     ; Número de función = 9 para imprimir+
-     84				     un	string
-     85	0019  CD 21			     INT 21h					     ; Imprime por pantalla que	opcion debe +
-     86				     escoger
-     87
-     88	001B  BA 0099r			     MOV DX, OFFSET OPCION	     ; Reservamos OPCION para la opcion	introducida por	    +
-     89				     teclado
-     90	001E  B4 0A			     MOV AH, 0AH			     ; Capturamos por teclado la opcion	a ejecutar(1+
-     91				     o 2)
-     92	0020  C6 06 0099r 03		     MOV OPCION[0], 3			     ; Lectura de caracteres máxima=60
-     93	0025  CD 21			     INT 21H
-     94
-     95	0027  80 3E 009Br 31		     CMP BYTE PTR OPCION[2], 31H     ; Vemos que opcion	hemos elegido
-     96	002C  74 00			     JE	OP1					     ; Si es 1 saltamos	a OP1 y	calculamos  +
-     97				     el	determinante por defecto
+     58	      35 20 79 20 6D 69	6E+
+     59	      69 6D 6F 20 2D 31	36+
+     60	      2C 20 73 65 70 61	72+
+     61	      61 6E 64 6F 6C 6F	73+
+     62	      20 63 6F 6E 20 75	6E+
+     63	      20 73 61 6C 74 6F	20+
+     64	      64 65 20 6C 69 6E	65+
+     65	      61 2C 20 79 20 65	6D+
+     66	      70 65 7A 61 6E 64	6F+
+     67	      20 64 65 20 69 7A	71+
+     68	      75 69 65 72 64 61	20+
+     69	      61 20 64 65 72 65	63+
+     70	      68 61 20 79 20 64	65+
+     71	      20 61 72 72 69 62	61+
+     72	      20 61 20 61 62 61	6A+
+     73	      6F 20 3A 0D 0A 24
+     74
+     75	01A5			     DATOS ENDS
+     76
+     77
+     78				     ; DEFINICION DEL SEGMENTO DE PILA
+     79
+     80	0000			     PILA    SEGMENT STACK "STACK"
+     81	0000  40*(00)			 DB   40H DUP (0)
+     82	0040			     PILA ENDS
+     83
+     84
+     85				     ; DEFINICION DEL SEGMENTO EXTRA
+     86
+     87	0000			     EXTRA     SEGMENT
+     88	0000  0000 0000			 RESULT	   DW 0,0		  ; 2 PALABRAS ( 4 BYTES )
+     89	0004			     EXTRA ENDS
+     90
+     91
+     92				     ; DEFINICION DEL SEGMENTO DE CODIGO
+     93
+     94	0000			     CODE    SEGMENT
+     95					 ASSUME	CS:CODE, DS:DATOS, ES: EXTRA, SS:PILA
+     96
+     97	0000  0000		     FACT_DATO_1  DW	   0
      98
-     99	002E			     OP2:
+     99				     ; COMIENZO	DEL PROCEDIMIENTO PRINCIPAL
     100
-    101
-    102	002E			     OP1:
-    103	002E  E8 0076			     CALL POS			 ; Llamamos a la función que calcula la parte positiva	del +
-    104				     determinante
-    105	0031  8B D1			     MOV DX, CX					     ; Copiamos	el resultado de	POS a DX
-    106	0033  E8 0099			     CALL NEGAT					     ; Llamamos	a la función que calcula la+
-    107				     parte negativa del	determinante
-    108	0036  2B D1			     SUB DX, CX					     ; Restamos	al resultado positivo el    +
-    109				     resultado negativo
-    110	0038  8B CA			     MOV CX, DX					     ; Almacenamos el resultado	en CX
+    101	0002			     START PROC	NEAR
+    102					 ;INICIALIZA LOS REGISTROS DE SEGMENTO CON SUS VALORES
+    103	0002  B8 0000s			 MOV AX, DATOS
+    104	0005  8E D8			 MOV DS, AX
+    105
+    106	0007  B8 0000s			 MOV AX, PILA
+    107	000A  8E D0			 MOV SS, AX
+    108
+    109	000C  B8 0000s			 MOV AX, EXTRA
+    110	000F  8E C0			 MOV ES, AX
     111
-    112
-    113	003A  BA 009Fr			     MOV DX, OFFSET ESPACIOS
-    114	003D  B4 09			     MOV AH, 9
-Turbo Assembler	 Version 2.0	    03/19/19 19:17:33	    Page 3
+    112					 ; CARGA EL PUNTERO DE PILA CON	EL VALOR MAS ALTO
+    113	0011  BC 0040			 MOV SP, 64
+    114
+Turbo Assembler	 Version 2.0	    03/20/19 19:36:14	    Page 3
 det.asm
 
 
 
-    115	003F  CD 21			     INT 21H
+    115					 ; FIN DE LAS INICIALIZACIONES
     116
-    117	0041  BB 0000			     MOV BX , 00H				     ; Cargamos	0 en BX	para comenzar el    +
-    118				     bucle de impresión
-    119	0044  E8 0005			     CALL IMPR
-    120
-    121
-    122					 ; FIN DEL PROGRAMA
-    123	0047  B8 4C00			 MOV AX, 4C00H
-    124	004A  CD 21			 INT 21H
-    125
-    126	004C			     START ENDP
-    127				     ;______________________________________________________________________
-    128				     ; SUBRUTINA PARA CALCULAR LOS DÍGITOS DE UN NÚMERO EN ASCII
-    129				     ; ENTRADA AX
-    130				     ; SALIDA NUMERO[0]	= SIGNO	, NUMERO[1] = PRIMER DIGITO,
-    131				     ;		      NUMERO[2]	= SEGUNDO DIGITO
-    132				     ;______________________________________________________________________
-    133	004C			     IMPR PROC NEAR
-    134	004C  B4 02			     MOV AH, 2
-    135	004E  B2 7C			     MOV DL, '|'
-    136	0050  CD 21			     INT 21H
-    137
-    138	0052  B0 00			     MOV AL, 0H
-    139	0054  A2 00A4r			     MOV CONTADOR, AL
-    140
-    141	0057			     BUCLE:
-    142	0057  8B 87 0000r		     MOV AX, WORD PTR A[BX]
-    143	005B  E8 0037			     CALL NUM
-    144
+    117
+    118	0014  BA 0009r			     MOV DX, OFFSET TEXTO	     ; DX = offset al inicio del texto a imprimir
+    119	0017  B4 09			     MOV AH, 9					     ; Número de función = 9 para imprimir+
+    120				     un	string
+    121	0019  CD 21			     INT 21h					     ; Imprime por pantalla que	opcion debe +
+    122				     escoger
+    123
+    124	001B  BA 0099r			     MOV DX, OFFSET OPCION	     ; Reservamos OPCION para la opcion	introducida por	    +
+    125				     teclado
+    126	001E  B4 0A			     MOV AH, 0AH			     ; Capturamos por teclado la opcion	a ejecutar(1+
+    127				     o 2)
+    128	0020  C6 06 0099r 03		     MOV OPCION[0], 3			     ; Lectura de caracteres máxima=60
+    129	0025  CD 21			     INT 21H
+    130
+    131	0027  80 3E 009Br 31		     CMP BYTE PTR OPCION[2], 31H     ; Vemos que opcion	hemos elegido
+    132	002C  74 2D			     JE	OP1					     ; Si es 1 saltamos	a OP1 y	calculamos  +
+    133				     el	determinante por defecto
+    134
+    135	002E			     OP2:
+    136
+    137	002E  BA 00F7r			     MOV DX, OFFSET OPCION2	     ; DX = offset al inicio del texto a imprimir
+    138	0031  B4 09			     MOV AH, 9					     ; Número de función = 9 para imprimir+
+    139				     un	string
+    140	0033  CD 21			     INT 21h					     ; Imprime por pantalla que	opcion debe +
+    141				     escoger
+    142
+    143	0035  BD 0000			     MOV BP, 00H				     ; Inicializamos el	contador a 0
+    144	0038  89 2E 009Br		     MOV WORD PTR OPCION[2], BP	     ; Copiamos	un 0 en	la variable opcion
     145
-    146	005E  B4 02			     MOV AH, 2
-    147	0060  8A 16 009Cr		     MOV DL, NUMERO[0]			     ; Imprime el signo
-    148	0064  CD 21			     INT 21H
-    149
-    150	0066  B4 02			     MOV AH, 2
-    151	0068  8A 16 009Dr		     MOV DL, NUMERO[1]			     ; Imprime el primer dígito
-    152	006C  CD 21			     INT 21H
-    153
-    154	006E  B4 02			     MOV AH, 2
-    155	0070  8A 16 009Er		     MOV DL, NUMERO[2]			     ; Imprime el segundo dígito
-    156	0074  CD 21			     INT 21H
+    146	003C			     OP2BUCLE:
+    147
+    148	003C  BA 0099r			     MOV DX, OFFSET OPCION	     ; Guardamos en opcion el numero introducido
+    149	003F  B4 0A			     MOV AH, 0AH
+    150	0041  C6 06 0099r 03		     MOV OPCION[0], 3
+    151	0046  CD 21			     INT 21H
+    152
+    153	0048  8A 1E 009Br		     MOV BL, OPCION[2]			     ; Copiamos	el numero introducido en BL
+    154	004C  B7 30			     MOV BH, 48
+    155	004E  2A FB			     SUB BH, BL
+    156	0050  3E: 88 BE	0000r		     MOV A[BP],	BH		     ; Copiamos	en la matriz A el numero introducido
     157
-    158	0076  B4 02			     MOV AH, 2
-    159	0078  B2 20			     MOV DL, 32					     ; Imprime espacio
-    160	007A  CD 21			     INT 21H
-    161
-    162	007C  43			     INC BX
-    163	007D  FE 06 00A4r		     INC CONTADOR					     ; Incrementamos en	uno el	    +
-    164				     contador
-    165	0081  80 3E 00A4r 03		     CMP CONTADOR, 03H					     ; Comparamos para ver el fin   +
-    166				     del bucle
-    167	0086  75 CF			     JNE BUCLE
-    168
-    169	0088  B4 02			     MOV AH, 2
-    170	008A  B2 7C			     MOV DL, '|'				     ; Imprime la linea	final
-    171	008C  CD 21			     INT 21H
-Turbo Assembler	 Version 2.0	    03/19/19 19:17:33	    Page 4
+    158	0055  45			     INC BP			     ; Incrementamos el	contador
+    159	0056  83 FD 09			     CMP BP, 09H				     ; Si el contador es menor que 9 vuelve +
+    160				     a OP2BUCLE	para capturar el siguiente
+    161	0059  75 E1			     JNE OP2BUCLE			     ; elemento	de la matriz, sino continua con	el  +
+    162				     determinante
+    163
+    164	005B			     OP1:
+    165
+    166	005B  E8 0153			     CALL POS			 ; Llamamos a la función que calcula la parte positiva	del +
+    167				     determinante
+    168	005E  8B D1			     MOV DX, CX					     ; Copiamos	el resultado de	POS a DX
+    169	0060  E8 0176			     CALL NEGAT					     ; Llamamos	a la función que calcula la+
+    170				     parte negativa del	determinante
+    171	0063  2B D1			     SUB DX, CX					     ; Restamos	al resultado positivo el    +
+Turbo Assembler	 Version 2.0	    03/20/19 19:36:14	    Page 4
 det.asm
 
 
 
-    172
-    173	008E  B4 02			     MOV AH, 2
-    174	0090  B2 0A			     MOV DL, 10					     ; Salto de	linea y	return
-    175	0092  CD 21			     INT 21H
-    176	0094  C3			     RET
-    177	0095			     IMPR ENDP
-    178				     ;______________________________________________________________________
-    179				     ; SUBRUTINA PARA CALCULAR LOS DÍGITOS DE UN NÚMERO EN ASCII
-    180				     ; ENTRADA AX
-    181				     ; SALIDA NUMERO[0]	= SIGNO	, NUMERO[1] = PRIMER DIGITO,
-    182				     ;		      NUMERO[2]	= SEGUNDO DIGITO
-    183				     ;______________________________________________________________________
-    184	0095			     NUM PROC NEAR
-    185
-    186	0095  BE 000A			     MOV SI, 0AH
-    187	0098  F7 FE			     IDIV SI					     ; Dividimos el número por	10
-    188	009A  80 C4 30			     ADD AH, 30H				     ; Pasamos a ASCII el resto
-    189	009D  88 26 009Er		     MOV NUMERO[2], AH			     ; Lo copiamos en NUMERO[2]
-    190
-    191	00A1  04 30			     ADD AL, 30H				     ; Pasamos a ASCII el cociente
-    192	00A3  A2 009Dr			     MOV NUMERO[1], AL			     ; Lo copiamos en NUMERO[1]
-    193	00A6  C3			     RET
-    194
-    195	00A7			     NUM ENDP
-    196				     ;______________________________________________________________________
-    197				     ; SUBRUTINA PARA CALCULAR LA PARTE	POSITIVA DEL DETERMINANTE
-    198				     ; ENTRADA
-    199				     ; SALIDA CX=RESULTADO
-    200				     ;______________________________________________________________________
-    201	00A7			     POS PROC NEAR
-    202
-    203	00A7  A0 0000r			 MOV AL, A[0h]				     ; Empezamos por la	diagonal, las posiciones 0h,+
-    204				     4h	y 8h de	la matriz
-    205	00AA  F6 2E 0004r		 IMUL A[4h]				     ; Multiplicamos A[0h] por A[4h], y	se almacena +
-    206				     el	resultado en AX
-    207	00AE  F6 2E 0008r		     IMUL A[8h]			     ; Multiplicamos A[8h], casteandolo	a word,	por el	    +
-    208				     resultado almacenado en AX.
-    209	00B2  8B C8			     MOV CX, AX					     ; El resultado queda almacenado en	AX, +
-    210				     con DX = 0	ya que los números son	de 5 bits. Lo movemos a	CX
-    211
-    212	00B4  A0 0002r			     MOV AL, A[2h]			     ; Continuamos por los elementos 2h, 3h y 7h
-    213	00B7  F6 2E 0003r		 IMUL A[3h]				     ; Multiplicamos A[2h] por A[3h], y	se almacena +
-    214				     el	resultado en AX
-    215	00BB  F6 2E 0007r		     IMUL A[7h]			     ; Multiplicamos A[7h], casteandolo	a word,	por el	    +
-    216				     resultado almacenado en AX.
-    217	00BF  03 C8			     ADD CX, AX					     ; Sumamos el resultado a CX, donde	    +
-    218				     guardamos el resultado anterior
+    172				     resultado negativo
+    173	0065  8B CA			     MOV CX, DX					     ; Almacenamos el resultado	en CX
+    174
+    175
+    176	0067			     BUCLE:
+    177
+    178	0067  8B 2E 00F5r		     MOV BP, CONTADOR
+    179	006B  3E: 8A 86	0000r		     MOV AL, A[BP]			     ; Guardamos en AL el valor	del número a	    +
+    180				     transformar en ascii
+    181
+    182	0070  C6 06 009Cr 20		     MOV NUMERO[0], " "			     ; Metemos un espacio en numero[0]
+    183	0075  04 00			     ADD AL, 0H					     ; Sumamos 0 al número para ver si	es  +
+    184				     negativo o	no
+    185	0077  79 07			     JNS MAS					     ; Si es positivo salta a mas
+    186
+    187	0079  C6 06 009Cr 2D		     MOV NUMERO[0], 2DH			     ; Es negativo, ponemos un menos en	ascii
+    188	007E  F6 D8			     NEG AL
+    189
+    190	0080			     MAS:
+    191
+    192	0080  B4 00			     MOV AH, 0H						     ; Cargamos	00 en Ah para tener +
+    193				     todo el numero en AX(numero positivo)
+    194	0082  E8 00F7			     CALL NUM						     ; LLamamos	a NUM, que guarda en+
+    195				     NUMERO los	digitos	en ascii
+    196
+    197	0085  83 3E 00F5r 00		     CMP CONTADOR, 0H				     ; Hacemos una serie de comparaciones   +
+    198				     con sus respectivos saltos. Dependiendo de
+    199	008A  74 5E			     JE	CERO						     ; por donde vaya el contador,  +
+    200				     iremos por	un número u otro, asi que saltamos al
+    201													     ; correspondiente
+    202	008C  83 3E 00F5r 01		     CMP CONTADOR, 1H
+    203	0091  74 5C			     JE	UNO
+    204
+    205	0093  83 3E 00F5r 02		     CMP CONTADOR, 2H
+    206	0098  74 5A			     JE	DOS
+    207
+    208	009A  83 3E 00F5r 03		     CMP CONTADOR, 3H
+    209	009F  74 58			     JE	TRES
+    210
+    211	00A1  83 3E 00F5r 04		     CMP CONTADOR, 4H
+    212	00A6  74 56			     JE	CUATRO
+    213
+    214	00A8  83 3E 00F5r 05		     CMP CONTADOR, 5H
+    215	00AD  74 54			     JE	CINCO
+    216
+    217	00AF  83 3E 00F5r 06		     CMP CONTADOR, 6H
+    218	00B4  74 52			     JE	SEIS
     219
-    220	00C1  A0 0001r			     MOV AL, A[1h]			     ; Finalizamos con los elementos 1h, 5h y 6h
-    221	00C4  F6 2E 0005r		 IMUL A[5h]				     ; Multiplicamos A[1h] por A[5h], y	se almacena +
-    222				     el	resultado en AX
-    223	00C8  F6 2E 0006r		     IMUL A[6h]			     ; Multiplicamos A[6h], casteandolo	a word,	por el	    +
-    224				     resultado almacenado en AX.
-    225	00CC  03 C8			     ADD CX, AX					     ; Finalmente sumamos de nuevo a CX	el  +
-    226				     resultado final
-    227	00CE  C3			     RET
-    228
-Turbo Assembler	 Version 2.0	    03/19/19 19:17:33	    Page 5
+    220	00B6  83 3E 00F5r 07		     CMP CONTADOR, 7H
+    221	00BB  74 50			     JE	SIETE
+    222
+    223	00BD  83 3E 00F5r 08		     CMP CONTADOR, 8H
+    224	00C2  74 4E			     JE	OCHO
+    225
+    226	00C4			     SIGUE:
+    227
+    228	00C4  A0 009Cr			     MOV AL, NUMERO[0]				     ; Colocamos el signo en la	primera	    +
+Turbo Assembler	 Version 2.0	    03/20/19 19:36:14	    Page 5
 det.asm
 
 
 
-    229
-    230	00CF			     POS ENDP
-    231
-    232				     ;______________________________________________________________________
-    233				     ; SUBRUTINA PARA CALCULAR LA PARTE	NEGATIVA DEL DETERMINANTE
-    234				     ; ENTRADA
-    235				     ; SALIDA CX=RESULTADO
-    236				     ;______________________________________________________________________
-    237	00CF			     NEGAT PROC	NEAR
-    238
-    239	00CF  A0 0002r			 MOV AL, A[2h]				     ; Empezamos por la	diagonal, las posiciones 2h,+
-    240				     4h	y 6h de	la matriz
-    241	00D2  F6 2E 0004r		 IMUL A[4h]				     ; Multiplicamos A[2h] por A[4h], y	se almacena +
-    242				     el	resultado en AX
-    243	00D6  F6 2E 0006r		     IMUL A[6h]					     ; Multiplicamos A[6h], casteandolo	a   +
-    244				     word, por el resultado almacenado en AX.
-    245	00DA  8B C8			     MOV CX, AX					     ; El resultado queda almacenado en	AX, +
-    246				     con DX = 0	ya que los números son	de 5 bits. Lo movemos a	CX
-    247
-    248	00DC  A0 0001r			     MOV AL, A[1h]			     ; Continuamos por los elementos 1h, 3h y 8h
-    249	00DF  F6 2E 0003r		 IMUL A[3h]				     ; Multiplicamos A[1h] por A[3h], y	se almacena +
-    250				     el	resultado en AX
-    251	00E3  F6 2E 0008r		     IMUL A[8h]					     ; Multiplicamos A[8h], casteandolo	a   +
-    252				     word, por el resultado almacenado en AX.
-    253	00E7  03 C8			     ADD CX, AX					     ; Sumamos el resultado a CX, donde	    +
-    254				     guardamos el resultado anterior
-    255
-    256	00E9  A0 0000r			     MOV AL, A[0h]			     ; Finalizamos con los elementos 0h, 5h y 7h
-    257	00EC  F6 2E 0005r		 IMUL A[5h]				     ; Multiplicamos A[0h] por A[5h], y	se almacena +
-    258				     el	resultado en AX
-    259	00F0  F6 2E 0007r		     IMUL A[7h]					     ; Multiplicamos A[7h], casteandolo	a   +
-    260				     word, por el resultado almacenado en AX.
-    261	00F4  03 C8			     ADD CX, AX					     ; Finalmente sumamos de nuevo a CX	el  +
-    262				     resultado final
-    263	00F6  C3			     RET
-    264
-    265
-    266	00F7			     NEGAT ENDP
-    267
-    268				     ;______________________________________________________________________
-    269				     ; SUBRUTINA PARA CONVERTIR	UN NÚMERO A ASCII
-    270				     ; ENTRADA
-    271				     ; SALIDA
-    272				     ;______________________________________________________________________
-    273	00F7			     ASCII PROC	NEAR
-    274
+    229				     posición correspondiente al número en la	matriz
+    230	00C7  88 84 00B2r		     MOV ESPACIOS[SI], AL
+    231	00CB  46			     INC SI						     ; Incrementamos SI
+    232
+    233	00CC  A0 009Er			     MOV AL, NUMERO[2]				     ; Colocamos el primer dígito
+    234	00CF  88 84 00B2r		     MOV ESPACIOS[SI], AL
+    235	00D3  46			     INC SI						     ; Incrementamos SI
+    236
+    237	00D4  A0 009Dr			     MOV AL, NUMERO[1]				     ; Colocamos el segundo dígito
+    238	00D7  88 84 00B2r		     MOV ESPACIOS[SI], AL
+    239	00DB  46			     INC SI						     ; Incrementamos SI
+    240
+    241	00DC  FF 06 00F5r		     INC CONTADOR				     ; Incrementamos CONTADOR
+    242	00E0  83 3E 00F5r 09		     CMP CONTADOR, 9H				     ; Si CONTADOR vale	9, hemos terminado, +
+    243				     si	no, salta a SIGUE
+    244	00E5  75 80			     JNE BUCLE
+    245	00E7  EB 2E 90			     JMP FIN						     ; Sino, salta a FIN
+    246
+    247	00EA			     CERO:							     ; Una vez en el		    +
+    248				     correspondiente, almacenamos en SI	la posición en	la que se debe colocar
+    249	00EA  BE 0006			     MOV SI, 6H						     ; el numero en la tabla ESPACIOS
+    250	00ED  EB D5			     JMP SIGUE
+    251	00EF			     UNO:
+    252	00EF  BE 000A			     MOV SI, 0AH
+    253	00F2  EB D0			     JMP SIGUE
+    254	00F4			     DOS:
+    255	00F4  BE 000E			     MOV SI, 0EH
+    256	00F7  EB CB			     JMP SIGUE
+    257	00F9			     TRES:
+    258	00F9  BE 001A			     MOV SI, 1AH
+    259	00FC  EB C6			     JMP SIGUE
+    260	00FE			     CUATRO:
+    261	00FE  BE 001E			     MOV SI, 1EH
+    262	0101  EB C1			     JMP SIGUE
+    263	0103			     CINCO:
+    264	0103  BE 0022			     MOV SI, 22H
+    265	0106  EB BC			     JMP SIGUE
+    266	0108			     SEIS:
+    267	0108  BE 0034			     MOV SI, 34H
+    268	010B  EB B7			     JMP SIGUE
+    269	010D			     SIETE:
+    270	010D  BE 0038			     MOV SI, 38H
+    271	0110  EB B2			     JMP SIGUE
+    272	0112			     OCHO:
+    273	0112  BE 003C			     MOV SI, 3CH
+    274	0115  EB AD			     JMP SIGUE
     275
     276
-    277	00F7			     ASCII ENDP
-    278
-    279				     ; FIN DEL SEGMENTO	DE CODIGO
-    280	00F7			     CODE ENDS
-    281				     ; FIN DEL PROGRAMA	INDICANDO DONDE	COMIENZA LA EJECUCION
-    282				     END START
-Turbo Assembler	 Version 2.0	    03/19/19 19:17:33	    Page 6
+    277					     ; FINALMENTE IMPRIMIMOS EL	RESULTADO
+    278	0117			     FIN:
+    279
+    280	0117  8B 2E 00F5r		     MOV BP, CONTADOR
+    281	011B  8B C1			     MOV AX, CX						     ; Guardamos en AX el valor	del +
+    282				     número a transformar en ascii
+    283
+    284	011D  C6 06 009Cr 20		     MOV NUMERO[0], " "				     ; Metemos un espacio en numero[0]
+    285	0122  05 0000			     ADD AX, 0H						     ; Sumamos 0 al número para ver+
+Turbo Assembler	 Version 2.0	    03/20/19 19:36:14	    Page 6
+det.asm
+
+
+
+    286				     si	es negativo o no
+    287	0125  79 07			     JNS MAS2						     ; Si es positivo salta a mas2
+    288
+    289	0127  C6 06 009Cr 2D		     MOV NUMERO[0], 2DH				     ; Es negativo, ponemos un menos en	ascii
+    290	012C  F7 D8			     NEG AX
+    291
+    292	012E			     MAS2:
+    293
+    294	012E  E8 004B			     CALL NUM						     ; Llamamos	a la función NUM   +
+    295				     para convertirlo a	ASCII
+    296
+    297	0131  BE 0027			     MOV SI, 27H					     ; El resultado comienza en	la  +
+    298				     posición 27h = 39
+    299	0134  A0 009Cr			     MOV AL, NUMERO[0]				     ; Colocamos el signo en la	primera	    +
+    300				     posición correspondiente al número en la	matriz
+    301	0137  88 84 00B2r		     MOV ESPACIOS[SI], AL
+    302
+    303	013B  46			     INC SI						     ; Incrementamos SI
+    304	013C  80 3E 00A0r 00		     CMP NUMERO[4], 00H
+    305	0141  74 08			     JE	SIG3						     ; Si el primer digito es un    +
+    306				     cero no lo	copiamos y salta al siguiente
+    307
+    308	0143  A0 00A0r			     MOV AL, NUMERO[4]				     ; Sino colocamos el primer	dígito
+    309	0146  88 84 00B2r		     MOV ESPACIOS[SI], AL
+    310	014A  46			     INC SI						     ; Incrementamos SI
+    311
+    312	014B			     SIG3:
+    313
+    314	014B  80 3E 009Fr 20		     CMP NUMERO[3], 20H
+    315	0150  74 08			     JE	SIG2						     ; Si el segundo digito es un   +
+    316				     espacio no	lo copiamos y salta al siguiente
+    317
+    318	0152  A0 009Fr			     MOV AL, NUMERO[3]				     ; Colocamos el segundo dígito
+    319	0155  88 84 00B2r		     MOV ESPACIOS[SI], AL
+    320	0159  46			     INC SI						     ; Incrementamos SI
+    321
+    322	015A			     SIG2:
+    323
+    324	015A  80 3E 009Er 20		     CMP NUMERO[2], 20H
+    325	015F  74 08			     JE	SIG1						     ; Si el tercer digito es un    +
+    326				     espacio no	lo copiamos y salta al siguiente
+    327
+    328	0161  A0 009Er			     MOV AL, NUMERO[2]				     ; Colocamos el tercer dígito
+    329	0164  88 84 00B2r		     MOV ESPACIOS[SI], AL
+    330	0168  46			     INC SI						     ; Incrementamos SI
+    331
+    332	0169			     SIG1:
+    333
+    334	0169  A0 009Dr			     MOV AL, NUMERO[1]				     ; Colocamos el último dígito
+    335	016C  88 84 00B2r		     MOV ESPACIOS[SI], AL
+    336
+    337
+    338	0170  BA 00B2r			     MOV DX, OFFSET ESPACIOS		     ; Imprime la matriz
+    339	0173  B4 09			     MOV AH, 9
+    340	0175  CD 21			     INT 21H
+    341
+    342
+Turbo Assembler	 Version 2.0	    03/20/19 19:36:14	    Page 7
+det.asm
+
+
+
+    343
+    344					 ; FIN DEL PROGRAMA
+    345	0177  B8 4C00			 MOV AX, 4C00H
+    346	017A  CD 21			 INT 21H
+    347
+    348	017C			     START ENDP
+    349
+    350				     ;______________________________________________________________________
+    351				     ; SUBRUTINA PARA CALCULAR LOS DÍGITOS DE UN NÚMERO EN ASCII
+    352				     ; ENTRADA AX
+    353				     ; SALIDA NUMERO[0]	= SIGNO	, NUMERO[1] = PRIMER DIGITO,
+    354				     ;		      NUMERO[2]	= SEGUNDO DIGITO
+    355				     ;______________________________________________________________________
+    356	017C			     NUM PROC NEAR
+    357
+    358	017C  BE 000A			     MOV SI, 0AH				     ; Copiamos	un 10 en SI para dividir por+
+    359				     el
+    360	017F  BD 0000			     MOV BP, 0H
+    361	0182  89 2E 00B0r		     MOV NUM_DIGITOS, BP		     ;Inicializamos NUM_DIGITOS	a 0
+    362
+    363	0186			     ASCII:
+    364
+    365	0186  BA 0000			     MOV DX, 00H
+    366	0189  FF 06 00B0r		     INC NUM_DIGITOS
+    367	018D  F7 F6			     DIV SI					     ; Dividimos el número por	10
+    368	018F  80 C2 30			     ADD DL, 30H				     ; Pasamos a ASCII el resto
+    369	0192  8B 2E 00B0r		     MOV BP, NUM_DIGITOS
+    370	0196  3E: 88 96	009Cr		     MOV NUMERO[BP], DL			     ; Lo copiamos en NUMERO[NUM_DIGITOS]
+    371
+    372	019B  3D 0000			     CMP AX, 0H					     ; Si el cociente es 0, hemos terminado
+    373	019E  75 E6			     JNE ASCII					     ; Si no es	0, volvemos al bucle
+    374
+    375	01A0  83 3E 00B0r 01		     CMP NUM_DIGITOS, 1H		     ; Si no tiene un solo digito acaba
+    376	01A5  75 09			     JNE DIGITO
+    377
+    378	01A7  BD 0002			     MOV BP, 2H					     ; Sino copia un espacio en	el siguiente
+    379	01AA  3E: C6 86	009Cr 20	     MOV NUMERO[BP], " "
+    380
+    381	01B0			     DIGITO:
+    382
+    383	01B0  C3			     RET
+    384
+    385	01B1			     NUM ENDP
+    386				     ;______________________________________________________________________
+    387				     ; SUBRUTINA PARA CALCULAR LA PARTE	POSITIVA DEL DETERMINANTE
+    388				     ; ENTRADA
+    389				     ; SALIDA CX=RESULTADO
+    390				     ;______________________________________________________________________
+    391	01B1			     POS PROC NEAR
+    392
+    393	01B1  A0 0000r			 MOV AL, A[0h]				     ; Empezamos por la	diagonal, las posiciones 0h,+
+    394				     4h	y 8h de	la matriz
+    395	01B4  F6 2E 0004r		 IMUL A[4h]				     ; Multiplicamos A[0h] por A[4h], y	se almacena +
+    396				     el	resultado en AX
+    397	01B8  F6 2E 0008r		     IMUL A[8h]					     ; Multiplicamos A[8h], casteandolo	a   +
+    398				     word, por el resultado almacenado en AX.
+    399	01BC  8B C8			     MOV CX, AX					     ; El resultado queda almacenado en	AX, +
+Turbo Assembler	 Version 2.0	    03/20/19 19:36:14	    Page 8
+det.asm
+
+
+
+    400				     con DX = 0	ya que los números son	de 5 bits. Lo movemos a	CX
+    401
+    402	01BE  A0 0002r			     MOV AL, A[2h]			     ; Continuamos por los elementos 2h, 3h y 7h
+    403	01C1  F6 2E 0003r		 IMUL A[3h]				     ; Multiplicamos A[2h] por A[3h], y	se almacena +
+    404				     el	resultado en AX
+    405	01C5  F6 2E 0007r		     IMUL A[7h]					     ; Multiplicamos A[7h], casteandolo	a   +
+    406				     word, por el resultado almacenado en AX.
+    407	01C9  03 C8			     ADD CX, AX					     ; Sumamos el resultado a CX, donde	    +
+    408				     guardamos el resultado anterior
+    409
+    410	01CB  A0 0001r			     MOV AL, A[1h]			     ; Finalizamos con los elementos 1h, 5h y 6h
+    411	01CE  F6 2E 0005r		 IMUL A[5h]				     ; Multiplicamos A[1h] por A[5h], y	se almacena +
+    412				     el	resultado en AX
+    413	01D2  F6 2E 0006r		     IMUL A[6h]					     ; Multiplicamos A[6h], casteandolo	a   +
+    414				     word, por el resultado almacenado en AX.
+    415	01D6  03 C8			     ADD CX, AX					     ; Finalmente sumamos de nuevo a CX	el  +
+    416				     resultado final
+    417	01D8  C3			     RET
+    418
+    419
+    420	01D9			     POS ENDP
+    421
+    422				     ;______________________________________________________________________
+    423				     ; SUBRUTINA PARA CALCULAR LA PARTE	NEGATIVA DEL DETERMINANTE
+    424				     ; ENTRADA
+    425				     ; SALIDA CX=RESULTADO
+    426				     ;______________________________________________________________________
+    427	01D9			     NEGAT PROC	NEAR
+    428
+    429	01D9  A0 0002r			 MOV AL, A[2h]				     ; Empezamos por la	diagonal, las posiciones 2h,+
+    430				     4h	y 6h de	la matriz
+    431	01DC  F6 2E 0004r		 IMUL A[4h]				     ; Multiplicamos A[2h] por A[4h], y	se almacena +
+    432				     el	resultado en AX
+    433	01E0  F6 2E 0006r		     IMUL A[6h]					     ; Multiplicamos A[6h], casteandolo	a   +
+    434				     word, por el resultado almacenado en AX.
+    435	01E4  8B C8			     MOV CX, AX					     ; El resultado queda almacenado en	AX, +
+    436				     con DX = 0	ya que los números son	de 5 bits. Lo movemos a	CX
+    437
+    438	01E6  A0 0001r			     MOV AL, A[1h]			     ; Continuamos por los elementos 1h, 3h y 8h
+    439	01E9  F6 2E 0003r		 IMUL A[3h]				     ; Multiplicamos A[1h] por A[3h], y	se almacena +
+    440				     el	resultado en AX
+    441	01ED  F6 2E 0008r		     IMUL A[8h]					     ; Multiplicamos A[8h], casteandolo	a   +
+    442				     word, por el resultado almacenado en AX.
+    443	01F1  03 C8			     ADD CX, AX					     ; Sumamos el resultado a CX, donde	    +
+    444				     guardamos el resultado anterior
+    445
+    446	01F3  A0 0000r			     MOV AL, A[0h]			     ; Finalizamos con los elementos 0h, 5h y 7h
+    447	01F6  F6 2E 0005r		 IMUL A[5h]				     ; Multiplicamos A[0h] por A[5h], y	se almacena +
+    448				     el	resultado en AX
+    449	01FA  F6 2E 0007r		     IMUL A[7h]					     ; Multiplicamos A[7h], casteandolo	a   +
+    450				     word, por el resultado almacenado en AX.
+    451	01FE  03 C8			     ADD CX, AX					     ; Finalmente sumamos de nuevo a CX	el  +
+    452				     resultado final
+    453	0200  C3			     RET
+    454
+    455
+    456	0201			     NEGAT ENDP
+Turbo Assembler	 Version 2.0	    03/20/19 19:36:14	    Page 9
+det.asm
+
+
+
+    457
+    458
+    459				     ; FIN DEL SEGMENTO	DE CODIGO
+    460	0201			     CODE ENDS
+    461				     ; FIN DEL PROGRAMA	INDICANDO DONDE	COMIENZA LA EJECUCION
+    462				     END START
+Turbo Assembler	 Version 2.0	    03/20/19 19:36:14	    Page 10
 Symbol Table
 
 
@@ -313,36 +513,55 @@ Symbol Table
 
 Symbol Name			  Type	 Value
 
-??DATE				  Text	 "03/19/19"
+??DATE				  Text	 "03/20/19"
 ??FILENAME			  Text	 "det	  "
-??TIME				  Text	 "19:17:33"
+??TIME				  Text	 "19:36:14"
 ??VERSION			  Number 0200
 @CPU				  Text	 0101H
 @CURSEG				  Text	 CODE
 @FILENAME			  Text	 DET
 @WORDSIZE			  Text	 2
 A				  Byte	 DATOS:0000
-ASCII				  Near	 CODE:00F7
-BUCLE				  Near	 CODE:0057
-CONTADOR			  Byte	 DATOS:00A4
-ESPACIOS			  Byte	 DATOS:009F
+ASCII				  Near	 CODE:0186
+BUCLE				  Near	 CODE:0067
+CERO				  Near	 CODE:00EA
+CINCO				  Near	 CODE:0103
+CONTADOR			  Word	 DATOS:00F5
+CUATRO				  Near	 CODE:00FE
+DIGITO				  Near	 CODE:01B0
+DOS				  Near	 CODE:00F4
+ESPACIOS			  Byte	 DATOS:00B2
 FACT_DATO_1			  Word	 CODE:0000
-IMPR				  Near	 CODE:004C
-NEGAT				  Near	 CODE:00CF
-NUM				  Near	 CODE:0095
+FIN				  Near	 CODE:0117
+MAS				  Near	 CODE:0080
+MAS2				  Near	 CODE:012E
+NEGAT				  Near	 CODE:01D9
+NUM				  Near	 CODE:017C
 NUMERO				  Byte	 DATOS:009C
-OP1				  Near	 CODE:002E
+NUM_DIGITOS			  Word	 DATOS:00B0
+OCHO				  Near	 CODE:0112
+OP1				  Near	 CODE:005B
 OP2				  Near	 CODE:002E
+OP2BUCLE			  Near	 CODE:003C
 OPCION				  Byte	 DATOS:0099
-POS				  Near	 CODE:00A7
+OPCION2				  Byte	 DATOS:00F7
+POS				  Near	 CODE:01B1
 RESULT				  Word	 EXTRA:0000
+SEIS				  Near	 CODE:0108
+SIETE				  Near	 CODE:010D
+SIG1				  Near	 CODE:0169
+SIG2				  Near	 CODE:015A
+SIG3				  Near	 CODE:014B
+SIGUE				  Near	 CODE:00C4
 START				  Near	 CODE:0002
 TEXTO				  Byte	 DATOS:0009
+TRES				  Near	 CODE:00F9
+UNO				  Near	 CODE:00EF
 
 Groups & Segments		  Bit Size Align  Combine Class
 
-CODE				  16  00F7 Para	  none
-DATOS				  16  00A5 Para	  none
+CODE				  16  0201 Para	  none
+DATOS				  16  01A5 Para	  none
 EXTRA				  16  0004 Para	  none
 PILA				  16  0040 Para	  Stack	  STACK
 

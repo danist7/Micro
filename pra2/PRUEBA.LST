@@ -1,0 +1,73 @@
+Turbo Assembler	 Version 2.0	    03/20/19 14:21:26	    Page 1
+prueba.asm
+
+
+
+      1				     ;**************************************************************************
+      2				     ; SBM 2019. ESTRUCTURA BÁSICA DE UN PROGRAMA EN ENSAMBLADOR
+      3				     ;**************************************************************************
+      4				     ; DEFINICION DEL SEGMENTO DE DATOS
+      5	0000			     DATOS SEGMENT
+      6				     ;-- rellenar con los datos	solicitados
+      7	0000			     DATOS ENDS
+      8				     ;**************************************************************************
+      9				     ; DEFINICION DEL SEGMENTO DE PILA
+     10	0000			     PILA SEGMENT STACK	"STACK"
+     11	0000  40*(00)		     DB	40H DUP	(0) ;ejemplo de	inicialización, 64 bytes inicializados	a 0
+     12	0040			     PILA ENDS
+     13				     ;**************************************************************************
+     14				     ; DEFINICION DEL SEGMENTO EXTRA
+     15	0000			     EXTRA SEGMENT
+     16	0000  0000 0000		     RESULT DW 0,0 ;ejemplo de inicialización.	2 PALABRAS (4 BYTES)
+     17	0004			     EXTRA ENDS
+     18				     ;**************************************************************************
+     19				     ; DEFINICION DEL SEGMENTO DE CODIGO
+     20	0000			     CODE SEGMENT
+     21				     ASSUME CS:	CODE, DS: DATOS, ES: EXTRA, SS:	PILA
+     22				     ; COMIENZO	DEL PROCEDIMIENTO PRINCIPAL
+     23	0000			     INICIO PROC
+     24				     ; INICIALIZA LOS REGISTROS	DE SEGMENTO CON	SU VALOR
+     25	0000  B8 0000s		     MOV AX, DATOS
+     26	0003  8E D8		     MOV DS, AX
+     27	0005  B8 0000s		     MOV AX, PILA
+     28	0008  8E D0		     MOV SS, AX
+     29	000A  B8 0000s		     MOV AX, EXTRA
+     30	000D  8E C0		     MOV ES, AX
+     31	000F  BC 0040		     MOV SP, 64	; CARGA	EL PUNTERO DE PILA CON EL VALOR	MAS ALTO
+     32				     ; FIN DE LAS INICIALIZACIONES
+     33				     ; COMIENZO	DEL PROGRAMA
+     34				     ; -- rellenar con las instrucciones solicitadas
+     35				     ; FIN DEL PROGRAMA
+     36	0012  B8 4C00		     MOV AX, 4C00H
+     37	0015  CD 21		     INT 21H
+     38	0017			     INICIO ENDP
+     39				     ; FIN DEL SEGMENTO	DE CODIGO
+     40	0017			     CODE ENDS
+     41				     ; FIN DEL PROGRAMA	INDICANDO DONDE	COMIENZA LA EJECUCION
+     42				     END INICIO
+Turbo Assembler	 Version 2.0	    03/20/19 14:21:26	    Page 2
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "03/20/19"
+??FILENAME			  Text	 "prueba  "
+??TIME				  Text	 "14:21:26"
+??VERSION			  Number 0200
+@CPU				  Text	 0101H
+@CURSEG				  Text	 CODE
+@FILENAME			  Text	 PRUEBA
+@WORDSIZE			  Text	 2
+INICIO				  Near	 CODE:0000
+RESULT				  Word	 EXTRA:0000
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+CODE				  16  0017 Para	  none
+DATOS				  16  0000 Para	  none
+EXTRA				  16  0004 Para	  none
+PILA				  16  0040 Para	  Stack	  STACK
+
