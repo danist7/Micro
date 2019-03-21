@@ -77,8 +77,7 @@ ARRIBA:
 	JE OP1 						; Si es 1 saltamos a OP1 y calculamos el determinante por defecto
 	CMP BYTE PTR OPCION[2], 32H	
 	JNE ARRIBA
-	CALL OP2
-		
+	CALL OP2					; Si introducimos la opcion 2 llama a la funcion OP2 para introducir la matriz por pantalla
  
 
 	
@@ -250,98 +249,94 @@ MOV DX, OFFSET OPCION2 		; DX = offset al inicio del texto a imprimir
 	
 OP2BUCLE:
 
-	MOV DX, OFFSET NUMERO 		; Guardamos en opcion el numero introducido
-	MOV AH, 0AH 				
+	MOV DX, OFFSET NUMERO 		; Llamamos a la funcion 0A para coger los numeros de la matriz
+	MOV AH, 0AH 				; y los guardamos en numero
 	MOV NUMERO[0], 10 			
 	INT 21H 
 	
-	CMP NUMERO[1], 1
+	CMP NUMERO[1], 1			; Si el numero de caracteres escritos es 1 salta a UNOD
 	JE UNOD
 	
-	CMP NUMERO[1], 2
+	CMP NUMERO[1], 2			; Si el numero de caracteres escritos es 2 salta a DOSD
 	JE DOSD
 	
-	CMP NUMERO[1], 3
+	CMP NUMERO[1], 3			; Si el numero de caracteres escritos es 3 salta a TRESD
 	JE TRESD
 	
 ERRORS:
 
-	MOV DX, OFFSET ERRORM		
-	MOV AH, 9 					
+	MOV DX, OFFSET ERRORM		; Sino es que ha introducido mas de tres caracteres por lo que
+	MOV AH, 9 					; esta mal introducido e imprime error
 	INT 21h 			
 	
-	JMP OP2
+	JMP OP2						; En caso de error vuelve a OP2 para empezar de nuevo
 
 UNOD:
-	
-	SUB NUMERO[2], 30H
-	MOV BL, NUMERO[2]
-	MOV A[BP], BL
-	JMP CONTINUA
+								; HEMOS INTRODUCIDO SOLO UN CARACTER (es decir, un numero del 0 al 9)
+	SUB NUMERO[2], 30H			; Restamos 30h al numero para pasarlo de ASCII a decimal
+	MOV BL, NUMERO[2]			; Lo copiamos en BL
+	MOV A[BP], BL				; Lo copiamos en la matriz A en la posición BP que es el contador
+	JMP CONTINUA				; Salta a continua para seguir con la siguiente iteracion
 
 
-DOSD: 
-
-	CMP NUMERO[2], 2DH
+DOSD: 							; HEMOS INTRODUCIDO DOS CARACTERES (es decir, un menos con un numero del 0 al 9
+								; o un numero del 10 al 15
+	CMP NUMERO[2], 2DH			; Si numero[2] es un "-" saltamos a DOSNUM
 	JNE DOSNUM
 	
-	SUB NUMERO[3], 30H
-	MOV BL, NUMERO[3]
-	NEG BL
-	MOV A[BP], BL
+	SUB NUMERO[3], 30H			; Si no es un "-" le restamos 30h al numero para pasarlo a decimal
+	MOV BL, NUMERO[3]			; Lo copiamos en BL
+	NEG BL						; Y lo negamos para pasarlo a negativo
+	MOV A[BP], BL				; Finalmente lo copiamos en la matriz y continuamos
 	JMP CONTINUA
 	
 	
-DOSNUM:
+DOSNUM:							; CASO EL NUMERO DE DOS CARACTERES NO ES NEGATIVO(es decir, es un numero del 10 al 15)
 	
-	SUB NUMERO[3], 30H
+	SUB NUMERO[3], 30H			; Le restamos 30h para pasarlo a decimal y lo copiamos en BL
 	MOV BL, NUMERO[3]
-	MOV AL, 0AH
-	SUB NUMERO[2], 30H
-	MUL NUMERO[2]
-	ADD BL, AL
+	MOV AL, 0AH					; Copiamos un 10 en AL
+	SUB NUMERO[2], 30H			; Restamos 30h a numero[2] para pasarlo a decimal
+	MUL NUMERO[2]				; Multiplicamos numero[2] por 10 porque es la parte alta del numero
+	ADD BL, AL					; Le sumamos 10*numero[2] a numero[3] y lo copiamos en la matriz
 	MOV A[BP], BL
 	
-	CMP BL, 0FH
+	CMP BL, 0FH					; Si el numero introducido es mayor que 15 entonces saltamos a error y vuelve a iniciarse todo
 	JG ERRORS
 	
-	JMP CONTINUA
+	JMP CONTINUA				; Continuamos
 	
 
-TRESD:
+TRESD:							; CASO METEMOS TRES CARACTERES (es decir, un numero negativo del -10 al -16)
 	
-	CMP NUMERO[2], 2DH
-	JNE ERRORS
+	CMP NUMERO[2], 2DH			; Si numero[2] no es un "-" salta a error porque se habra introducido un numero de 
+	JNE ERRORS					; tres caracteres y no se puede
 	
-	SUB NUMERO[4], 30H
-	MOV BL, NUMERO[4]
-	MOV AL, 0AH
-	SUB NUMERO[3], 30H
-	MUL NUMERO[3]
-	ADD BL, AL
-	CMP BL, 10H
+	SUB NUMERO[4], 30H			; Lo pasamos de ascii a decimal 
+	MOV BL, NUMERO[4]			; Lo copiamos en BL (=numero[4])
+	MOV AL, 0AH					; Copiamos un 10 en AL
+	SUB NUMERO[3], 30H			; Pasmos numero[3] a decimal 
+	MUL NUMERO[3]				; Multiplicamos numero[3]*10 porque es la parte alta del numero
+	ADD BL, AL					; Sumamos numero[3]*10 + numero[4]
+	CMP BL, 10H					; Si es mayor que 16 salta a error porque no podemos poner tal numero
 	JG ERRORS
-	NEG BL
-	MOV A[BP], BL
+	NEG BL						; Convertimos el numero en negativo
+	MOV A[BP], BL				; Y lo copiamos en la matriz A
 	
 	
 	
-	JMP CONTINUA
-	
-	
-	
-	
+	JMP CONTINUA				; Salta a continua	
 	
 	
 CONTINUA: 	
 
-	MOV DX, OFFSET BARRAENE		
+	MOV DX, OFFSET BARRAENE		; Imprime un salto de linea
 	MOV AH, 9 					
 	INT 21h 
 	
 	INC BP		                ; Incrementamos el contador
 	CMP BP, 09H					; Si el contador es menor que 9 vuelve a OP2BUCLE para capturar el siguiente 
-	JE FINAL			; elemento de la matriz, sino continua con el determinante
+	JE FINAL					; elemento de la matriz, sino continua con el determinante
 	JMP OP2BUCLE
 	
 FINAL:
