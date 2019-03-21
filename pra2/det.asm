@@ -9,15 +9,17 @@
 
 DATOS SEGMENT 
 
-	A	DB	1, 2, 3, 1, 3, 3, 1, 1, 1
+	A	DB	-16, 2, 3, 1, -16, 3, 1, -16, 1
 	TEXTO DB "Seleccione una opcion:", 13, 10, "1) Calcular el determinante con valores por defecto",13,10, "2) Calcular el determinante con valores introducidos por teclado", 13, 10, '$' 
 	OPCION DB 3 DUP(?) 		; Guarda la opcion escrita por teclado en OPCION[2]
-	NUMERO DB 20 DUP(?)		; Guarda los dígitos de un número
+	NUMERO DB 20 DUP(0)		; Guarda los dígitos de un número
 	NUM_DIGITOS DW 0H		;
 	ESPACIOS DB "     |           |", 13, 10,"|A|= |           |=     ", 13, 10,"     |           |", 13, 10, '$'
 	CONTADOR DW 0H
 	OPCION2 DB 13, 10, "Introduzca los 9 elementos de la matriz uno por uno, maximo 15 y minimo -16, separandolos con un salto de linea, y empezando de izquierda a derecha y de arriba a abajo :", 13, 10, '$'
-
+	ERRORM DB 13, 10, "error", 13, 10,'$'
+	BARRAENE DB 13, 10, '$'
+	
 DATOS ENDS 
 
 
@@ -60,6 +62,7 @@ START PROC NEAR
 
     ; FIN DE LAS INICIALIZACIONES 
 	
+ARRIBA:	
 	
 	MOV DX, OFFSET TEXTO 		; DX = offset al inicio del texto a imprimir
 	MOV AH, 9 					; Número de función = 9 para imprimir un string
@@ -72,39 +75,20 @@ START PROC NEAR
 	
 	CMP BYTE PTR OPCION[2], 31H	; Vemos que opcion hemos elegido
 	JE OP1 						; Si es 1 saltamos a OP1 y calculamos el determinante por defecto
-			
-OP2: 
+	CMP BYTE PTR OPCION[2], 32H	
+	JNE ARRIBA
+	CALL OP2
+		
+ 
 
-	MOV DX, OFFSET OPCION2 		; DX = offset al inicio del texto a imprimir
-	MOV AH, 9 					; Número de función = 9 para imprimir un string
-	INT 21h 					; Imprime por pantalla que opcion debe escoger 
-	
-	MOV BP, 00H					; Inicializamos el contador a 0
-	MOV WORD PTR OPCION[2], BP	; Copiamos un 0 en la variable opcion
-	
-OP2BUCLE:
-
-	MOV DX, OFFSET OPCION 		; Guardamos en opcion el numero introducido
-	MOV AH, 0AH 				
-	MOV OPCION[0], 3 			
-	INT 21H 
-	
-	MOV BL, OPCION[2]			; Copiamos el numero introducido en BL
-	MOV BH, 48
-	SUB BH, BL 
-	MOV A[BP], BH 		        ; Copiamos en la matriz A el numero introducido
-	
-	INC BP		                ; Incrementamos el contador
-	CMP BP, 09H					; Si el contador es menor que 9 vuelve a OP2BUCLE para capturar el siguiente 
-	JNE OP2BUCLE				; elemento de la matriz, sino continua con el determinante
 	
 OP1:	
 
 	CALL POS                    ; Llamamos a la función que calcula la parte positiva del determinante
-	MOV DX, CX					; Copiamos el resultado de POS a DX 
+	MOV BP, CX					; Copiamos el resultado de POS a DX 
 	CALL NEGAT 					; Llamamos a la función que calcula la parte negativa del determinante 
-	SUB DX, CX					; Restamos al resultado positivo el resultado negativo
-	MOV CX, DX					; Almacenamos el resultado en CX
+	SUB BP, CX					; Restamos al resultado positivo el resultado negativo
+	MOV CX, BP					; Almacenamos el resultado en CX
 
 
 BUCLE: 	
@@ -201,8 +185,7 @@ OCHO:
 	
 	; FINALMENTE IMPRIMIMOS EL RESULTADO 
 FIN:
-		
-	MOV BP, CONTADOR		
+			
 	MOV AX, CX			 			; Guardamos en AX el valor del número a transformar en ascii
 	
 	MOV NUMERO[0], " "				; Metemos un espacio en numero[0]
@@ -216,40 +199,26 @@ MAS2:
 
 	CALL NUM						; Llamamos a la función NUM para convertirlo a ASCII
 	
+	
 	MOV SI, 27H						; El resultado comienza en la posición 27h = 39
 	MOV AL, NUMERO[0]				; Colocamos el signo en la primera posición correspondiente al número en la matriz
 	MOV ESPACIOS[SI], AL
 	
-	INC SI						 	; Incrementamos SI
-	CMP NUMERO[4], 00H
-	JE SIG3							; Si el primer digito es un cero no lo copiamos y salta al siguiente
+	ADD SI, NUM_DIGITOS				; Vamos a imprimir de atrás a delante , asi que inicializamos SI a la posición del
+	MOV BP, 0						; último dígito, y BP a 1
 	
-	MOV AL, NUMERO[4]				; Sino colocamos el primer dígito
-	MOV ESPACIOS[SI], AL
-	INC SI							; Incrementamos SI
 	
-SIG3:
-								
-	CMP NUMERO[3], 20H
-	JE SIG2  						; Si el segundo digito es un espacio no lo copiamos y salta al siguiente
+BUCLE2:
 	
-	MOV AL, NUMERO[3]				; Colocamos el segundo dígito
-	MOV ESPACIOS[SI], AL
-	INC SI							; Incrementamos SI
-	
-SIG2:
-								
-	CMP NUMERO[2], 20H
-	JE SIG1  						; Si el tercer digito es un espacio no lo copiamos y salta al siguiente
-	
-	MOV AL, NUMERO[2]				; Colocamos el tercer dígito
-	MOV ESPACIOS[SI], AL
-	INC SI							; Incrementamos SI
-	
-SIG1:
+	INC BP
+	MOV AL, NUMERO[BP]				; Movemos a AL el dígito correspondiente
+	MOV ESPACIOS[SI], AL			; Y ponemos el dígito en su posición
+	SUB SI, 1H						; Decrementamos SI y BP
+	CMP BP, NUM_DIGITOS				; Si BP es distinto de NUM_DIGITOS, salta al bucle2
+	JNE BUCLE2
 
-	MOV AL, NUMERO[1]				; Colocamos el último dígito
-	MOV ESPACIOS[SI], AL
+
+	
 	
 	
 	MOV DX, OFFSET ESPACIOS			; Imprime la matriz
@@ -263,7 +232,123 @@ SIG1:
     INT 21H 
 	
 START ENDP 
+;______________________________________________________________________
+; SUBRUTINA PARA LEER POR PANTALLA
+; ENTRADA 
+; SALIDA
+;______________________________________________________________________
 
+OP2 PROC NEAR
+
+MOV DX, OFFSET OPCION2 		; DX = offset al inicio del texto a imprimir
+	MOV AH, 9 					; Número de función = 9 para imprimir un string
+	INT 21h 					; Imprime por pantalla que opcion debe escoger 
+	
+	MOV BP, 00H					
+	MOV WORD PTR NUMERO[2], BP	; Copiamos un 0 en la variable opcion
+
+	
+OP2BUCLE:
+
+	MOV DX, OFFSET NUMERO 		; Guardamos en opcion el numero introducido
+	MOV AH, 0AH 				
+	MOV NUMERO[0], 10 			
+	INT 21H 
+	
+	CMP NUMERO[1], 1
+	JE UNOD
+	
+	CMP NUMERO[1], 2
+	JE DOSD
+	
+	CMP NUMERO[1], 3
+	JE TRESD
+	
+ERRORS:
+
+	MOV DX, OFFSET ERRORM		
+	MOV AH, 9 					
+	INT 21h 			
+	
+	JMP OP2
+
+UNOD:
+	
+	SUB NUMERO[2], 30H
+	MOV BL, NUMERO[2]
+	MOV A[BP], BL
+	JMP CONTINUA
+
+
+DOSD: 
+
+	CMP NUMERO[2], 2DH
+	JNE DOSNUM
+	
+	SUB NUMERO[3], 30H
+	MOV BL, NUMERO[3]
+	NEG BL
+	MOV A[BP], BL
+	JMP CONTINUA
+	
+	
+DOSNUM:
+	
+	SUB NUMERO[3], 30H
+	MOV BL, NUMERO[3]
+	MOV AL, 0AH
+	SUB NUMERO[2], 30H
+	MUL NUMERO[2]
+	ADD BL, AL
+	MOV A[BP], BL
+	
+	CMP BL, 0FH
+	JG ERRORS
+	
+	JMP CONTINUA
+	
+
+TRESD:
+	
+	CMP NUMERO[2], 2DH
+	JNE ERRORS
+	
+	SUB NUMERO[4], 30H
+	MOV BL, NUMERO[4]
+	MOV AL, 0AH
+	SUB NUMERO[3], 30H
+	MUL NUMERO[3]
+	ADD BL, AL
+	CMP BL, 10H
+	JG ERRORS
+	NEG BL
+	MOV A[BP], BL
+	
+	
+	
+	JMP CONTINUA
+	
+	
+	
+	
+	
+	
+CONTINUA: 	
+
+	MOV DX, OFFSET BARRAENE		
+	MOV AH, 9 					
+	INT 21h 
+	
+	INC BP		                ; Incrementamos el contador
+	CMP BP, 09H					; Si el contador es menor que 9 vuelve a OP2BUCLE para capturar el siguiente 
+	JE FINAL			; elemento de la matriz, sino continua con el determinante
+	JMP OP2BUCLE
+	
+FINAL:
+	
+	RET
+	
+OP2 ENDP
 ;______________________________________________________________________
 ; SUBRUTINA PARA CALCULAR LOS DÍGITOS DE UN NÚMERO EN ASCII
 ; ENTRADA AX
@@ -308,17 +393,41 @@ POS PROC NEAR
 	
     MOV AL, A[0h]				; Empezamos por la diagonal, las posiciones 0h,4h y 8h de la matriz
     IMUL A[4h]					; Multiplicamos A[0h] por A[4h], y se almacena el resultado en AX
-	IMUL A[8h]					; Multiplicamos A[8h], casteandolo a word, por el resultado almacenado en AX. 
+	
+	MOV BL, A[8H]
+	MOV BH, 0H		
+	ADD BL, 0H					; Si es positicvo, saltamos, si es negativo, extendemos el signo
+	JNS M00
+	MOV BH, 0FFH		
+	
+M00:
+	IMUL BX						; Multiplicamos A[8h],guardado como WORD en BX, por el resultado almacenado en AX. 
 	MOV CX, AX					; El resultado queda almacenado en AX, con DX = 0 ya que los números son de 5 bits. Lo movemos a CX
 	
 	MOV AL, A[2h]				; Continuamos por los elementos 2h, 3h y 7h
     IMUL A[3h]					; Multiplicamos A[2h] por A[3h], y se almacena el resultado en AX
-	IMUL A[7h]					; Multiplicamos A[7h], casteandolo a word, por el resultado almacenado en AX.
+	
+	MOV BL, A[7H]
+	MOV BH, 0H		
+	ADD BL, 0H					; Si es positicvo, saltamos, si es negativo, extendemos el signo
+	JNS M01
+	MOV BH, 0FFH	
+	
+M01:
+	IMUL BX						; Multiplicamos A[7h], guardado como WORD en BX, por el resultado almacenado en AX.
 	ADD CX, AX					; Sumamos el resultado a CX, donde guardamos el resultado anterior
 	
 	MOV AL, A[1h]				; Finalizamos con los elementos 1h, 5h y 6h
     IMUL A[5h]					; Multiplicamos A[1h] por A[5h], y se almacena el resultado en AX
-	IMUL A[6h]					; Multiplicamos A[6h], casteandolo a word, por el resultado almacenado en AX.
+	
+	MOV BL, A[6H]
+	MOV BH, 0H		
+	ADD BL, 0H					; Si es positicvo, saltamos, si es negativo, extendemos el signo
+	JNS M02
+	MOV BH, 0FFH	
+	
+M02:
+	IMUL BX						; Multiplicamos A[6h], guardado como WORD en BX, por el resultado almacenado en AX.
 	ADD CX, AX					; Finalmente sumamos de nuevo a CX el resultado final
 	RET
 	
@@ -334,17 +443,41 @@ NEGAT PROC NEAR
 	
     MOV AL, A[2h]				; Empezamos por la diagonal, las posiciones 2h,4h y 6h de la matriz
     IMUL A[4h]					; Multiplicamos A[2h] por A[4h], y se almacena el resultado en AX
-	IMUL A[6h]					; Multiplicamos A[6h], casteandolo a word, por el resultado almacenado en AX. 
+	
+	MOV BL, A[6H]
+	MOV BH, 0H
+	ADD BL, 0H					; Si es positicvo, saltamos, si es negativo, extendemos el signo
+	JNS M10
+	MOV BH, 0FFH
+	
+M10:	
+	IMUL BX						; Multiplicamos A[6h], guardado como WORD en BX, por el resultado almacenado en AX. 
 	MOV CX, AX					; El resultado queda almacenado en AX, con DX = 0 ya que los números son de 5 bits. Lo movemos a CX
 	
 	MOV AL, A[1h]				; Continuamos por los elementos 1h, 3h y 8h
     IMUL A[3h]					; Multiplicamos A[1h] por A[3h], y se almacena el resultado en AX
-	IMUL A[8h]					; Multiplicamos A[8h], casteandolo a word, por el resultado almacenado en AX.
+	
+	MOV BL, A[8H]
+	MOV BH, 0H	
+	ADD BL, 0H					; Si es positicvo, saltamos, si es negativo, extendemos el signo
+	JNS M11
+	MOV BH, 0FFH
+M11:
+	
+	IMUL BX						; Multiplicamos A[8h], guardado como WORD en BX, por el resultado almacenado en AX.
 	ADD CX, AX					; Sumamos el resultado a CX, donde guardamos el resultado anterior
 	
 	MOV AL, A[0h]				; Finalizamos con los elementos 0h, 5h y 7h
     IMUL A[5h]					; Multiplicamos A[0h] por A[5h], y se almacena el resultado en AX
-	IMUL A[7h]					; Multiplicamos A[7h], casteandolo a word, por el resultado almacenado en AX.
+	
+	MOV BL, A[7H]
+	MOV BH, 0H
+	ADD BL, 0H					; Si es positicvo, saltamos, si es negativo, extendemos el signo
+	JNS M12
+	MOV BH, 0FFH	
+
+M12:	
+	IMUL BX						; Multiplicamos A[7h], guardado como WORD en BX, por el resultado almacenado en AX.
 	ADD CX, AX					; Finalmente sumamos de nuevo a CX el resultado final
 	RET
 	
