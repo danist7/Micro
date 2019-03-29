@@ -23,10 +23,10 @@ PUBLIC _computeControlDigit				; Hacer visible y accesible la función desde C
 _computeControlDigit PROC FAR 			; En C es unsigned char computeControlDigit(char* barCodeASCII)
 
 	PUSH BP 							; Salvaguardar BP en la pila para poder modificarle sin modificar su valor
-	MOV BP, SP							; Igualar BP el contenido de SP
-	PUSH AX								; Salvamos AX, BX y SI en la pila
-	PUSH BX
+	MOV BP, SP							; Igualar BP el contenido de SP							
+	PUSH BX								; Salvamos AX, BX y SI en la pila
 	PUSH SI
+	PUSH ES
 	
 	LES  BX, [BP + 6]					; Guardamos en BX el offset y en ES el segmento de la variable
 	
@@ -89,13 +89,132 @@ _computeControlDigit PROC FAR 			; En C es unsigned char computeControlDigit(cha
 	MOV AL, BL							; Guardamos el resultado final en AX y salimos
 	MOV AH, 0h
 		
-		
+	POP ES
 	POP SI								; Restaurar el valor de BP, AX, BX y SI antes de salir
 	POP BX
-	POP AX
 	POP BP								
 	RET									; Retorno de la función que nos ha llamado, devolviendo el resultado del factorial en AX
 		
 _computeControlDigit ENDP				; Fin de la funcion
+
+
+PUBLIC _decodeBarCode				; Hacer visible y accesible la función desde C
+_decodeBarCode PROC FAR 			; En C es void decodeBarCode(unsigned char* in_barCodeASCII, unsigned int* countryCode, 
+									;							 unsigned int* companyCode, unsigned long* productCode, unsigned char* controlDigit);
+
+										
+	PUSH BP 							; Salvaguardar BP en la pila para poder modificarle sin modificar su valor
+	MOV BP, SP							; Igualar BP el contenido de SP							
+	PUSH BX
+	PUSH ES
+	PUSH SI
+	PUSH DS
+	PUSH DI
+	PUSH CX
+	
+	MOV AX, 0H							; Nos aseguramos de que AX vale 0 antes de darle cualquier uso
+	
+	LES  BX, [BP + 6]					; Guardamos en BX el offset y en ES el segmento de la variable in_barCodeASCII
+	
+	LDS SI, [BP + 10]					; Guardamos en SI el offset y en DS el segmento de la variable countryCode
+	
+	MOV CL, 0H							; Inicializamos a cero el valor del int a devolver
+	MOV DS:[SI], CL
+	
+	MOV AL, ES:[BX + 2]					; Sumamos el dígito de las unidades		
+	SUB AL, 30H							; Lo pasamos a int antes de sumarlo
+	ADD DS:[SI], AL
+	
+	MOV AL, ES:[BX + 1]					; Movemos el digito en ascii a AL
+	SUB AL, 30H							; Lo pasamos a int
+	MOV CL, 0AH							; Lo multiplicamos por 10,quedando el resultado guardado en AL,
+	MUL CL								; ya que el resultado siempre es de menos de un byte
+	ADD DS:[SI], AL						; Sumamos el dígito de las decenas
+	
+	MOV AL, ES:[BX]						; Movemos el digito en ascii a AL
+	SUB AL, 30H							; Lo pasamos a int
+	MOV CL, 64H							; Lo multiplicamos por 100,quedando el resultado guardado en AX
+	MUL CL								
+	ADD DS:[SI], AX						; Sumamos el dígito de las centenas
+	
+	
+	LDS SI, [BP + 14]					; Guardamos en SI el offset y en DS el segmento de la variable companyCode
+	
+						
+	MOV DS:[SI], 0H						; Inicializamos a cero el valor del int a devolver
+	
+	MOV AL, ES:[BX + 6]					; Sumamos el dígito de las unidades		
+	SUB AL, 30H							; Lo pasamos a int antes de sumarlo
+	ADD DS:[SI], AL
+	
+	MOV AL, ES:[BX + 5]					; Movemos el digito en ascii a AL
+	SUB AL, 30H							; Lo pasamos a int
+	MOV CL, 0AH							; Lo multiplicamos por 10,quedando el resultado guardado en AL,
+	MUL CL								; ya que el resultado siempre es de menos de un byte
+	ADD DS:[SI], AL						; Sumamos el dígito de las decenas
+	
+	MOV AL, ES:[BX + 4]					; Movemos el digito en ascii a AL
+	SUB AL, 30H							; Lo pasamos a int
+	MOV CL, 64H							; Lo multiplicamos por 100,quedando el resultado guardado en AX
+	MUL CL								
+	ADD DS:[SI], AX						; Sumamos el dígito de las centenas
+	
+	MOV AL, ES:[BX + 3]					; Movemos el digito en ascii a AL
+	SUB AL, 30H							; Lo pasamos a int
+	MOV CL, 3E8H						; Lo multiplicamos por 1000,quedando el resultado guardado en AX
+	MUL CL								
+	ADD DS:[SI], AX						; Sumamos el dígito de las centenas	de millar
+
+	
+	LDS SI, [BP + 18]					; Guardamos en SI el offset y en DS el segmento de la variable productCode
+	
+						
+	MOV DS:[SI], 0H						; Inicializamos a cero el valor del int a devolver
+	
+	MOV AL, ES:[BX + 11]				; Sumamos el dígito de las unidades		
+	SUB AL, 30H							; Lo pasamos a int antes de sumarlo
+	ADD DS:[SI], AL
+	
+	MOV AL, ES:[BX + 10]				; Movemos el digito en ascii a AL
+	SUB AL, 30H							; Lo pasamos a int
+	MOV CL, 0AH							; Lo multiplicamos por 10,quedando el resultado guardado en AL,
+	MUL CL								; ya que el resultado siempre es de menos de un byte
+	ADD DS:[SI], AL						; Sumamos el dígito de las decenas
+	
+	MOV AL, ES:[BX + 9]					; Movemos el digito en ascii a AL
+	SUB AL, 30H							; Lo pasamos a int
+	MOV CL, 64H							; Lo multiplicamos por 100,quedando el resultado guardado en AL
+	MUL CL								
+	ADD DS:[SI], AX						; Sumamos el dígito de las centenas
+	
+	MOV AL, ES:[BX + 8]					; Movemos el digito en ascii a AL
+	SUB AL, 30H							; Lo pasamos a int
+	MOV CL, 3E8H						; Lo multiplicamos por 1000,quedando el resultado guardado en AX
+	MUL CL								
+	ADD DS:[SI], AX						; Sumamos el dígito de las centenas	de millar
+	
+	MOV AL, ES:[BX + 7]					; Movemos el digito en ascii a AL
+	SUB AL, 30H							; Lo pasamos a int
+	MOV CL, 2710H						; Lo multiplicamos por 10000, quedando el resultado guardado en DX y AX
+	MUL CL								
+	ADD DS:[SI], AX						; Sumamos el dígito de las centenas	de millar
+	
+	
+	
+	
+		
+	
+	
+	POP CX 
+	POP DI
+	POP DS
+	POP SI	
+	POP ES								; Restaurar el valor de BP, AX, BX y SI antes de salir
+	POP BX
+	POP BP								
+	RET									; Retorno de la función que nos ha llamado
+		
+_decodeBarCode ENDP
+
 _TEXT ENDS
 END
