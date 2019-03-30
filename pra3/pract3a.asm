@@ -118,86 +118,66 @@ _decodeBarCode PROC FAR 			; En C es void decodeBarCode(unsigned char* in_barCod
 	
 	LDS SI, [BP + 10]					; Guardamos en SI el offset y en DS el segmento de la variable countryCode
 	
-	MOV CL, 0H							; Inicializamos a cero el valor del int a devolver
-	MOV DS:[SI], CL
+		
+	MOV DI, 1H							; Inicializamos el contador a 1
+	MOV CL, 0AH							; Cargamos en CL un 10, para multiplicar
+	MOV AL, ES:[BX]						; Cargamos en AL el primer dígito, y lo pasamos de ASCII a decimal
+	SUB AL, 30H
 	
-	MOV AL, ES:[BX + 2]					; Sumamos el dígito de las unidades		
-	SUB AL, 30H							; Lo pasamos a int antes de sumarlo
-	ADD DS:[SI], AL
+	PAIS:
+		
+		MUL CL							; Multiplicamos el contenido de AL por CL (usamos la múltiplicación por byte, ya que al ser 3 dígitos, no hay problema)
+		SUB ES:[BX][DI], 30H			; Pasamos el siguiente dígito a decimal
+		ADD AL, ES:[BX][DI]				; Y lo sumamos a AL (siempre se añade en la parte baja del registro, ya que es sumar un digito)
+		INC DI							; Incrementamos el contador, y si es 3, salimos de bucle
+		CMP DI, 3H
+		JNE PAIS
 	
-	MOV AL, ES:[BX + 1]					; Movemos el digito en ascii a AL
-	SUB AL, 30H							; Lo pasamos a int
-	MOV CL, 0AH							; Lo multiplicamos por 10,quedando el resultado guardado en AL,
-	MUL CL								; ya que el resultado siempre es de menos de un byte
-	ADD DS:[SI], AL						; Sumamos el dígito de las decenas
+	MOV DS:[SI], AX						; Guardamos el resultado en la dirección de memoria correspondiente
 	
-	MOV AL, ES:[BX]						; Movemos el digito en ascii a AL
-	SUB AL, 30H							; Lo pasamos a int
-	MOV CL, 64H							; Lo multiplicamos por 100,quedando el resultado guardado en AX
-	MUL CL								
-	ADD DS:[SI], AX						; Sumamos el dígito de las centenas
-	
+	MOV AX, 0H							; Volvemos a poner AX a 0 para los nuevos cálculos
 	
 	LDS SI, [BP + 14]					; Guardamos en SI el offset y en DS el segmento de la variable companyCode
 	
-						
-	MOV DS:[SI], 0H						; Inicializamos a cero el valor del int a devolver
+	MOV DI, 4H							; Inicializamos el contador a 4
+	MOV CX, 0AH							; Cargamos en CX un 10, para multiplicar
+	MOV AL, ES:[BX + 3]					; Cargamos en AL el primer dígito, y lo pasamos de ASCII a decimal
+	SUB AL, 30H
 	
-	MOV AL, ES:[BX + 6]					; Sumamos el dígito de las unidades		
-	SUB AL, 30H							; Lo pasamos a int antes de sumarlo
-	ADD DS:[SI], AL
+	EMPRESA:
+		
+		MUL CX							; Multiplicamos el contenido de AX por CX 
+		SUB ES:[BX][DI], 30H			; Pasamos el siguiente dígito a decimal
+		ADD AL, ES:[BX][DI]				; Y lo sumamos a AL (siempre se añade en la parte baja del registro, ya que es sumar un digito)
+		INC DI							; Incrementamos el contador, y si es 7, salimos de bucle
+		CMP DI, 7H
+		JNE EMPRESA					
 	
-	MOV AL, ES:[BX + 5]					; Movemos el digito en ascii a AL
-	SUB AL, 30H							; Lo pasamos a int
-	MOV CL, 0AH							; Lo multiplicamos por 10,quedando el resultado guardado en AL,
-	MUL CL								; ya que el resultado siempre es de menos de un byte
-	ADD DS:[SI], AL						; Sumamos el dígito de las decenas
+	MOV DS:[SI], AX						; Guardamos el resultado en la dirección de memoria correspondiente
 	
-	MOV AL, ES:[BX + 4]					; Movemos el digito en ascii a AL
-	SUB AL, 30H							; Lo pasamos a int
-	MOV CL, 64H							; Lo multiplicamos por 100,quedando el resultado guardado en AX
-	MUL CL								
-	ADD DS:[SI], AX						; Sumamos el dígito de las centenas
-	
-	MOV AL, ES:[BX + 3]					; Movemos el digito en ascii a AL
-	SUB AL, 30H							; Lo pasamos a int
-	MOV CL, 3E8H						; Lo multiplicamos por 1000,quedando el resultado guardado en AX
-	MUL CL								
-	ADD DS:[SI], AX						; Sumamos el dígito de las centenas	de millar
-
+	MOV AX, 0H							; Volvemos a poner AX a 0 para los nuevos cálculos
 	
 	LDS SI, [BP + 18]					; Guardamos en SI el offset y en DS el segmento de la variable productCode
 	
-						
-	MOV DS:[SI], 0H						; Inicializamos a cero el valor del int a devolver
+	MOV DI, 8H							; Inicializamos el contador a 8
+	MOV CX, 0AH							; Cargamos en CX un 10, para multiplicar
+	MOV AL, ES:[BX + 7]					; Cargamos en AL el primer dígito, y lo pasamos de ASCII a decimal
+	SUB AL, 30H
 	
-	MOV AL, ES:[BX + 11]				; Sumamos el dígito de las unidades		
-	SUB AL, 30H							; Lo pasamos a int antes de sumarlo
-	ADD DS:[SI], AL
+	PRODUCTO:
+		
+		MUL CX							; Multiplicamos el contenido de AX por CX 
+		SUB ES:[BX][DI], 30H			; Pasamos el siguiente dígito a decimal
+		ADD AL, ES:[BX][DI]				; Y lo sumamos a AL (siempre se añade en la parte baja del registro, ya que es sumar un digito)
+		INC DI							; Incrementamos el contador, y si es 12, salimos de bucle
+		CMP DI, 12H
+		JNE PRODUCTO					
 	
-	MOV AL, ES:[BX + 10]				; Movemos el digito en ascii a AL
-	SUB AL, 30H							; Lo pasamos a int
-	MOV CL, 0AH							; Lo multiplicamos por 10,quedando el resultado guardado en AL,
-	MUL CL								; ya que el resultado siempre es de menos de un byte
-	ADD DS:[SI], AL						; Sumamos el dígito de las decenas
+	MOV DS:[SI], AX						; Guardamos la parte baja del resultado en la dirección de memoria correspondiente
+	MOV DS:[SI + 2], DX					; Guardamos la parte alta del resultado en la dirección de memoria correspondiente
 	
-	MOV AL, ES:[BX + 9]					; Movemos el digito en ascii a AL
-	SUB AL, 30H							; Lo pasamos a int
-	MOV CL, 64H							; Lo multiplicamos por 100,quedando el resultado guardado en AL
-	MUL CL								
-	ADD DS:[SI], AX						; Sumamos el dígito de las centenas
+	MOV AX, 0H							; Volvemos a poner AX a 0 para los nuevos cálculos				
 	
-	MOV AL, ES:[BX + 8]					; Movemos el digito en ascii a AL
-	SUB AL, 30H							; Lo pasamos a int
-	MOV CL, 3E8H						; Lo multiplicamos por 1000,quedando el resultado guardado en AX
-	MUL CL								
-	ADD DS:[SI], AX						; Sumamos el dígito de las centenas	de millar
-	
-	MOV AL, ES:[BX + 7]					; Movemos el digito en ascii a AL
-	SUB AL, 30H							; Lo pasamos a int
-	MOV CL, 2710H						; Lo multiplicamos por 10000, quedando el resultado guardado en DX y AX
-	MUL CL								
-	ADD DS:[SI], AX						; Sumamos el dígito de las centenas	de millar
 	
 	
 	
