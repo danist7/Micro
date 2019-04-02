@@ -1,5 +1,5 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; 			SBM 2016. Practica 3 - Ejercicio3a 				;
+; 	SBM 2016. Practica 3 - Ejercicio3a 						;
 ;   Daniel Santo-Tomás López								;
 ;   Lucía Rivas Molina 										;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -30,27 +30,16 @@ _computeControlDigit PROC FAR 			; En C es unsigned char computeControlDigit(cha
 	
 	LES  BX, [BP + 6]					; Guardamos en BX el offset y en ES el segmento de la variable
 	
-	MOV SI, 0h							; Inicializamos un contador a 0
 	
-	BUCLE:							; BUCLE PARA PASAR LOS VALORES DE ASCII A DECIMAL
-		
-		MOV AL, ES:[BX][SI]				; Accedemos al valor SI de la variable 
-		SUB AL, 30h						; Restamos 30h para pasarlo de ascii a decimal
-		
-		MOV ES:[BX][SI], AL				; Copiamos el valor en decimal en su lugar 
-		INC SI							; Incrementamos SI para la siguiente iteración
-		CMP SI, 0Ch						; Si SI vale 12 quiere decir que hemos acabado el bucle y ya estan todos en decimal 
-		
-		JNE BUCLE						; Si SI no vale 12 salta a bucle para la siguiente iteracion
-
-		
 	MOV SI, 2h							; Inicializamos el contador a 2 para acceder a la posicion 3
-	MOV AL, ES:[BX]						; Cargamos el primer valor en AL
+	MOV AL, ES:[BX]						; Cargamos el primer valor en AL y lo pasamos a decimal
+	SUB AL, 30H
 	
 	
 	IMPAR:							; BUCLE PARA CALCULAR LA SUMA DE LOS DIGITOS IMPARES
 	
 		ADD AL, ES:[BX][SI]				; Sumamos en AL los digitos impares
+		SUB AL, 30H						; Pasamos el último numero sumado a decimal
 		INC SI							; Incrementamos SI 2 veces
 		INC SI
 		
@@ -64,8 +53,11 @@ _computeControlDigit PROC FAR 			; En C es unsigned char computeControlDigit(cha
 	PAR: 							; BUCLE PARA MULTIPLICAR LOS VALORES PARES POR 3 Y SUMARLOS 
 		
 		ADD AL, ES:[BX][SI]				; Sumamos 3 veces cada numero en AL que es donde teniamos la suma de impares
-		ADD AL, ES:[BX][SI]				
-		ADD AL, ES:[BX][SI]				
+		SUB AL, 30H						; pasando después cada dígito a decimal
+		ADD AL, ES:[BX][SI]	
+		SUB AL, 30H			
+		ADD AL, ES:[BX][SI]	
+		SUB AL, 30H	
 	
 		INC SI							; Incrementamos SI 2 veces
 		INC SI
@@ -86,7 +78,8 @@ _computeControlDigit PROC FAR 			; En C es unsigned char computeControlDigit(cha
 	
 	SALTO:
 	
-	MOV AL, BL							; Guardamos el resultado final en AX y salimos
+	MOV AL, BL							; Guardamos el resultado final, pasado a ASCII, en AX y salimos
+	ADD AL, 30H
 	MOV AH, 0h
 		
 	POP ES
@@ -127,8 +120,8 @@ _decodeBarCode PROC FAR 			; En C es void decodeBarCode(unsigned char* in_barCod
 	PAIS:
 		
 		MUL CL							; Multiplicamos el contenido de AL por CL (usamos la múltiplicación por byte, ya que al ser 3 dígitos, no hay problema)
-		SUB ES:[BX][DI], 30H			; Pasamos el siguiente dígito a decimal
-		ADD AL, ES:[BX][DI]				; Y lo sumamos a AL (siempre se añade en la parte baja del registro, ya que es sumar un digito)
+		ADD AL, ES:[BX][DI]				; Sumamos el siguiente dígito a AL (siempre se añade en la parte baja del registro, ya que es sumar un digito)
+		SUB AL, 30H						; Y lo pasamos a decimal
 		INC DI							; Incrementamos el contador, y si es 3, salimos de bucle
 		CMP DI, 3H
 		JNE PAIS
@@ -147,8 +140,8 @@ _decodeBarCode PROC FAR 			; En C es void decodeBarCode(unsigned char* in_barCod
 	EMPRESA:
 		
 		MUL CX							; Multiplicamos el contenido de AX por CX 
-		SUB ES:[BX][DI], 30H			; Pasamos el siguiente dígito a decimal
-		ADD AL, ES:[BX][DI]				; Y lo sumamos a AL (siempre se añade en la parte baja del registro, ya que es sumar un digito)
+		ADD AL, ES:[BX][DI]				; Sumamos el siguiente dígito a AL (siempre se añade en la parte baja del registro, ya que es sumar un digito)
+		SUB AL, 30H						; Y lo pasamos a decimal
 		INC DI							; Incrementamos el contador, y si es 7, salimos de bucle
 		CMP DI, 7H
 		JNE EMPRESA					
@@ -167,29 +160,31 @@ _decodeBarCode PROC FAR 			; En C es void decodeBarCode(unsigned char* in_barCod
 	PRODUCTO:
 		
 		MUL CX							; Multiplicamos el contenido de AX por CX 
-		SUB ES:[BX][DI], 30H			; Pasamos el siguiente dígito a decimal
-		ADD AL, ES:[BX][DI]				; Y lo sumamos a AL (siempre se añade en la parte baja del registro, ya que es sumar un digito)
+		ADD AL, ES:[BX][DI]				; Sumamos el siguiente dígito a AL (siempre se añade en la parte baja del registro, ya que es sumar un digito)
+		SUB AL, 30H						; Y lo pasamos a decimal
+		
+		
+		
 		INC DI							; Incrementamos el contador, y si es 12, salimos de bucle
-		CMP DI, 12H
+		CMP DI, 0CH
 		JNE PRODUCTO					
 	
 	MOV DS:[SI], AX						; Guardamos la parte baja del resultado en la dirección de memoria correspondiente
 	MOV DS:[SI + 2], DX					; Guardamos la parte alta del resultado en la dirección de memoria correspondiente
 	
-	MOV AX, 0H							; Volvemos a poner AX a 0 para los nuevos cálculos				
-	
-	
-	
-	
-	
 		
+	LDS SI, [BP + 22]					; Guardamos en SI el offset y en DS el segmento de la variable controlDigit
+	
+	MOV AL, ES:[BX + 12]				; Guardamos el caracter en la posición de memoria correspondiente
+	MOV DS:[SI], AL
+	
 	
 	
 	POP CX 
 	POP DI
 	POP DS
 	POP SI	
-	POP ES								; Restaurar el valor de BP, AX, BX y SI antes de salir
+	POP ES								; Restaurar el valor de los registros antes de salir
 	POP BX
 	POP BP								
 	RET									; Retorno de la función que nos ha llamado

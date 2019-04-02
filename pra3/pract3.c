@@ -41,18 +41,18 @@ int main( void ){
 	printf("- Codigo de Pais - %u -\n",countryCode);
 	printf("- Codigo de Empresa - %u -\n",companyCode);
 	printf("- Codigo de Producto - %lu -\n",productCode);
-	printf("- Codigo de Control - %u -\n",controlDigit);
+	printf("- Codigo de Control - %c -\n",controlDigit);
 
 	controlDigitCheck = computeControlDigit(barCodeStr);
 	
 	if(controlDigit != controlDigitCheck){
-		printf("Error en codigo de control. Leido %u vs Calculado %u\n", controlDigit, controlDigitCheck);
+		printf("Error en codigo de control. Leido %c vs Calculado %c\n", controlDigit, controlDigitCheck);
 		printf("Corrigiendo codigo de barras...\n");
 		createBarCode(countryCode,companyCode,productCode,controlDigitCheck,barCodeStrCorregido);
 		printf("Codigo de barras corregido es: %s\n",barCodeStrCorregido);
 	}
 	else{
-		printf("Codigo de control %u es correcto para el codigo de barras %s\n", controlDigit, barCodeStr);
+		printf("Codigo de control %c es correcto para el codigo de barras %s\n", controlDigit, barCodeStr);
 	}
 	
 	
