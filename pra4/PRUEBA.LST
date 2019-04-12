@@ -1,0 +1,119 @@
+Turbo Assembler	 Version 2.0	    04/12/19 18:42:50	    Page 1
+prueba.asm
+
+
+
+      1				     ;**************************************************************************
+      2				     ; SBM 2019. ESTRUCTURA BÁSICA DE UN PROGRAMA EN ENSAMBLADOR
+      3				     ;**************************************************************************
+      4				     ; DEFINICION DEL SEGMENTO DE DATOS
+      5	0000			     DATOS SEGMENT
+      6	0000  4C 4D 4E 4F 50 51	52+	     MATRIZ_POLIBIO DB 'LMNOPQ', 'RSTUVW', 'XYZ012','345678', '9ABCDE',	'FGHIJK'
+      7	      53 54 55 56 57 58	59+
+      8	      5A 30 31 32 33 34	35+
+      9	      36 37 38 39 41 42	43+
+     10	      44 45 46 47 48 49	4A+
+     11	      4B
+     12	0024  31 35 31 34 31 31	36+	     DATO DB '15141164536414'
+     13	      34 35 33 36 34 31	34
+     14	0032			     DATOS ENDS
+     15				     ;**************************************************************************
+     16				     ; DEFINICION DEL SEGMENTO DE PILA
+     17	0000			     PILA SEGMENT STACK	"STACK"
+     18	0000  40*(00)			     DB	40H DUP	(0) ;ejemplo de	inicialización, 64 bytes inicializados	a 0
+     19	0040			     PILA ENDS
+     20				     ;**************************************************************************
+     21				     ; DEFINICION DEL SEGMENTO EXTRA
+     22	0000			     EXTRA SEGMENT
+     23	0000  0000 0000			     RESULT DW 0,0 ;ejemplo de inicialización.	2 PALABRAS (4 BYTES)
+     24	0004			     EXTRA ENDS
+     25				     ;**************************************************************************
+     26				     ; DEFINICION DEL SEGMENTO DE CODIGO
+     27	0000			     CODE SEGMENT
+     28					     ASSUME CS:	CODE, DS: DATOS, ES: EXTRA, SS:	PILA
+     29				     ; COMIENZO	DEL PROCEDIMIENTO PRINCIPAL
+     30	0000			     INICIO PROC
+     31				     ; INICIALIZA LOS REGISTROS	DE SEGMENTO CON	SU VALOR
+     32	0000  B8 0000s			     MOV AX, DATOS
+     33	0003  8E D8			     MOV DS, AX
+     34	0005  B8 0000s			     MOV AX, PILA
+     35	0008  8E D0			     MOV SS, AX
+     36	000A  B8 0000s			     MOV AX, EXTRA
+     37	000D  8E C0			     MOV ES, AX
+     38	000F  BC 0040			     MOV SP, 64	; CARGA	EL PUNTERO DE PILA CON EL VALOR	MAS ALTO
+     39				     ; FIN DE LAS INICIALIZACIONES
+     40				     ; COMIENZO	DEL PROGRAMA
+     41	0012  BE 0000		     mov si, 0h
+     42	0015				     bucle:
+     43	0015  8A 9C 0024r			     mov bl, DATO[si]		     ; Guardamos los caracteres	a traducir
+     44	0019  46				     inc si
+     45	001A  8A BC 0024r			     mov bh, DATO[si]
+     46	001E  46				     inc si
+     47	001F  80 FB 24				     cmp bl, 24h			     ; Si en bl	está el dolar,	salta a	fin
+     48	0022  74 22				     je	fin
+     49	0024  80 EB 30				     sub bl, 30h			     ; Pasa los	numeros	de ascii a decimal
+     50	0027  80 EF 30				     sub bh, 30h
+     51	002A  FE CB				     dec bl				     ; restamos	uno para hacer los cálculos
+     52	002C  FE CF				     dec bh
+     53
+     54	002E  8A C3				     mov al, bl				     ; Multiplicamos la	fila por 6 y la	    +
+     55				     sumamos a la columna
+     56	0030  B1 06				     mov cl, 6h
+     57	0032  F6 E1				     mul cl
+Turbo Assembler	 Version 2.0	    04/12/19 18:42:50	    Page 2
+prueba.asm
+
+
+
+     58	0034  8A DF				     mov bl, bh
+     59	0036  B7 00				     mov bh, 0h
+     60	0038  03 C3				     add ax, bx
+     61	003A  8B D8				     mov bx, ax				     ; Se guarda el resultado en bx
+     62
+     63	003C  8A 97 0000r			     mov dl, MATRIZ_POLIBIO[bx]		     ; Accedemos a la posición	de la matriz+
+     64				     dada por bx, y guardamos su contenido en dl (es un	caracter ascii)
+     65
+     66	0040  B4 02				     mov ah, 2				     ; Imprimimos el caracter por pantalla
+     67	0042  CD 21				     int 21h
+     68
+     69	0044  EB CF				     jmp bucle
+     70	0046				     fin:
+     71
+     72				     ; FIN DEL PROGRAMA
+     73	0046  B8 4C00			     MOV AX, 4C00H
+     74	0049  CD 21			     INT 21H
+     75	004B			     INICIO ENDP
+     76				     ; FIN DEL SEGMENTO	DE CODIGO
+     77	004B			     CODE ENDS
+     78				     ; FIN DEL PROGRAMA	INDICANDO DONDE	COMIENZA LA EJECUCION
+     79				     END INICIO
+Turbo Assembler	 Version 2.0	    04/12/19 18:42:50	    Page 3
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "04/12/19"
+??FILENAME			  Text	 "prueba  "
+??TIME				  Text	 "18:42:50"
+??VERSION			  Number 0200
+@CPU				  Text	 0101H
+@CURSEG				  Text	 CODE
+@FILENAME			  Text	 PRUEBA
+@WORDSIZE			  Text	 2
+BUCLE				  Near	 CODE:0015
+DATO				  Byte	 DATOS:0024
+FIN				  Near	 CODE:0046
+INICIO				  Near	 CODE:0000
+MATRIZ_POLIBIO			  Byte	 DATOS:0000
+RESULT				  Word	 EXTRA:0000
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+CODE				  16  004B Para	  none
+DATOS				  16  0032 Para	  none
+EXTRA				  16  0004 Para	  none
+PILA				  16  0040 Para	  Stack	  STACK
+
