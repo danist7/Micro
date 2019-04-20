@@ -1,7 +1,7 @@
 
  Start  Stop   Length Name               Class
 
- 00000H 00031H 00032H DATOS              
+ 00000H 00032H 00033H DATOS              
  00040H 00043H 00004H EXTRA              
  00050H 0009AH 0004BH CODE               
  000A0H 000DFH 00040H PILA               STACK

@@ -3,105 +3,184 @@
 ;   Daniel Santo-Tomás López								;
 ;   Lucía Rivas Molina 										;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 codigo SEGMENT
 	ASSUME cs : codigo
 	
 	ORG 256
 	
-inicio: jmp instalador
+
+inicio:
+	mov cx, ds:[82h]						; Guardamos los posibles parámetros de entrada
+	
+	mov ax, 0
+	mov es, ax
+	mov bx, es:[ 57h*4 ]			;Comprobamos si el driver está instalado
+	cmp bx, 0h
+	je noinst						; Si no está instalado, saltamos	
+	
+	mov ax,4B4AH					; Comprobamos la firma para saber si está realmente instalado
+	cmp ax, cs:[bx-2]
+	jne noinst						; Si la firma es incorrecta, saltamos(no está instalado)
+	mov dx, OFFSET INST				; Guardamos el mensaje de ya instalado en DX
+	
+	cmp cl , 2Fh					; Si no hay parámetros de entrada, saltamos a la impresión
+	jne texto
+	cmp ch, 44h						; Si el parámetro es para desinstalar , saltamos a la rutina	
+	jne texto
+	jmp desinstalar					; En otro caso , saltamos a la impresión 
+	jmp fin
+	
+	noinst:
+		mov dx, OFFSET DINST 		; Guardamos el mensaje de no instalado en DX
+		cmp cl , 2Fh				; Si no hay parámetros de entrada, saltamos a la impresión
+		jne texto
+		cmp ch, 49h					; Si el parámetro es para instalar , saltamos a la rutina	
+		jne texto
+		jmp instalar
+		
+		
+	texto:
+		MOV AH, 9 					;Imprimimos el mensaje de instalado o no instalado
+		INT 21h 		
+	
+		MOV DX, OFFSET MENSAJE 		; Imprimimos el resto y salimos
+		MOV AH, 9 					
+		INT 21h 			
+	
+	fin:
+		MOV AX, 4C00H
+		INT 21H
 
 ; Variables globales
+INST DB "DRIVER INSTALADO",13,10,'$'
+DINST DB "DRIVER NO INSTALADO",13,10,'$'
+MENSAJE DB "GRUPO 12, LUCIA RIVAS Y DANIEL SANTO-TOMAS",13,10,"EJECUTAR CON /I PARA INSTALAR EL DRIVER Y CON /D PARA DESINSTALARLO",13,10,'$'
+INVERSA DB 256 dup (?)
 MATRIZ_POLIBIO DB 'LMNOPQ', 'RSTUVW', 'XYZ012','345678', '9ABCDE', 'FGHIJK'
-
-
-
-
-
-
-
-
 ; Rutina de servicio a la interrupción
 rsi PROC FAR
 	
-	push 							; Guardamos los registros
+	push ax si cx bx dx  							; Guardamos los registros
 	
-	mov si, 4CH						; Movemos a si la L en ascii
+		
 	cmp AH, 11H
 	je once
+	cmp AH, 10h
+	jne final
 	
-	 ; CODIFICACION A POLIBIO
-	
-		cmp ax, 41h					; Comparamos el valor con la A
-		jl numero					; Si el valor es menor quiere decir que es un numero, luego salta a numero
-		
-		sub ax, si   				; Restamos a la posicion la L
-		jns noneg					; Si la resta es positiva (ax > si) salta a noneg
-		neg ax						; Si es negativa (ax < si) niega ax para que sea positivo		
-		
-	noneg:
-		
-		mov cl, 6h
-		div cl					; Dividimos entre 6 para ver la columna (ah, resto) y fila (al, cociente)
-		inc al						; Incrementamos la posición para imprimirlo bien
-		inc ah 
-		
-	numero:
-		
-		mov si, 30h					; Inicializamos si a 0 porque estamos empezando por los numeros					
-		sub ax, si					; Restamos el valor menos el 0
-		mov cl, 6h
-		div cl						; Dividimos entre 6 guardando fila en al y columna en ah 
-		add al, 3h
-		add ah, 3h
-		
-		div 
-		
-		
-	; DECODIFICACION
+	mov bx,dx
+	mov dl, ds:[bx]	
+	mov dh, 0h
+	mov si,dx
+	add si, si
+	mov dl ,INVERSA[si]
+	mov ah, 2 				; Imprimimos el caracter por pantalla
+	int 21h
+
+	mov dl ,INVERSA[si+1]
+	mov ah, 2 				; Imprimimos el caracter por pantalla
+	int 21h
+	jmp final
 	
 	once:
-		mov si, 0h
+		mov bx,dx
 		bucle:
-			mov bl, ds:[dx][si]		; Guardamos los caracteres a traducir
-			inc si
-			mov bh, ds:[dx][si]
-			inc si 
-			cmp bl, 24h				; Si en bl está el dolar, salta a fin
-			je fin
-			sub bl, 30h				; Pasa los numeros de ascii a decimal
-			sub bh, 30h
-			dec bl					; restamos uno para hacer los cálculos
-			dec bh
+			mov dl, ds:[bx]		; Guardamos los caracteres a traducir
+			inc bx
+			mov dh, ds:[bx]
+			inc bx
+			cmp dl, 24h				; Si en dl está el dolar, salta a fin
+			je final
+			sub dl, 30h				; Pasa los numeros de ascii a decimal
+			sub dh, 30h
+			dec dl					; restamos uno para hacer los cálculos
+			dec dh
 			
-			mov al, bl				; Multiplicamos la fila por 6 y la sumamos a la columna
+			mov al, dl				; Multiplicamos la fila por 6 y la sumamos a la columna
 			mov cl, 6h
 			mul cl
-			add ax, bh				
-			mov bx, ax				; Se guarda el resultado en bx
+			mov dl, dh
+			mov dh, 0h
+			add ax, dx				
+			mov si, ax				; Se guarda el resultado en si
 			
-			mov dl, MATRIZ_POLIBIO[bx]		; Accedemos a la posición de la matriz dada por bx, y guardamos su contenido en dl (es un caracter ascii)
+			mov dl, MATRIZ_POLIBIO[si]		; Accedemos a la posición de la matriz dada por si, y guardamos su contenido en dl (es un caracter ascii)
 									
 			mov ah, 2 				; Imprimimos el caracter por pantalla
 			int 21h 
 			
 			jmp bucle
-	fin:
+	final:
 	
-	pop ... iret
+	pop dx bx cx si ax   
+	iret
 rsi ENDP
 
 
-instalador PROC
+instalar PROC FAR
+	
+	mov si, 0h
+	mov al, 31h
+	mov ah, 31h
+	bucle2:
+		mov bx, 0h
+		mov bl, MATRIZ_POLIBIO[si]			; Guardamos la letra cuya codificación vamos a guardar
+		add bl, bl							; Multiplicamos por dos, ya que por cada letra hay dos numeros de un byte
+		inc si
+		
+		mov INVERSA[bx], al
+		mov INVERSA[bx+1],ah
+		inc al
+		cmp al, 37h
+		jne bucle2
+		cmp ah, 36h
+		je fuera
+		mov al, 31h
+		inc ah
+		jmp bucle2
+		
+fuera:
+				
 	mov ax, 0
 	mov es, ax
 	mov ax, OFFSET rsi
 	mov bx, cs
 	cli
-	mov es:[ 57h*4 ], ax 
-	mov es:[ 57h*4+2 ], bx
-	sti mov dx, OFFSET instalador 
+	mov es:[57h*4], ax 
+	mov es:[57h*4+2], bx
+	sti 
+	mov dx, OFFSET instalar 
 	int 27h ; Acaba y deja residente ; PSP, variables y rutina rsi. 
 	
-instalador ENDP
+instalar ENDP
+
+desinstalar PROC FAR
+	push ax bx cx ds es
+	
+	mov cx, 0
+	mov ds, cx
+	mov es, ds:[57h*4+2]
+	mov bx, es:[2Ch]
+	
+	mov ah, 49h
+	int 21h
+	mov es, bx
+	int 21h
+	
+	cli
+	mov ds:[57h*4], cx
+	mov ds:[40h*4+2], cx
+	sti
+	
+	pop es ds cx bx ax
+	
+	MOV AX, 4C00H
+	INT 21H
+	
+	
+	
+desinstalar ENDP
+
 codigo ENDS 
 END inicio

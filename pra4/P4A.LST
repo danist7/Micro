@@ -1,0 +1,296 @@
+Turbo Assembler	 Version 2.0	    04/20/19 22:41:01	    Page 1
+p4a.asm
+
+
+
+      1				     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      2				     ;	     SBM 2016. Practica	4 - Ejercicio4a						     ;
+      3				     ;	 Daniel	Santo-Tomás López							     ;
+      4				     ;	 Lucía	Rivas Molina									    +
+      5				     ;
+      6				     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      7
+      8	0000			     codigo SEGMENT
+      9					     ASSUME cs : codigo
+     10
+     11					     ORG 256
+     12
+     13
+     14	0100			     inicio:
+     15	0100  8B 0E 0082		     mov cx, ds:[82h]						     ; Guardamos los	    +
+     16				     posibles parámetros de entrada
+     17
+     18	0104  B8 0000			     mov ax, 0
+     19	0107  8E C0			     mov es, ax
+     20	0109  26: 8B 1E	015C		     mov bx, es:[ 57h*4	]		     ;Comprobamos si el	driver está instalado
+     21	010E  83 FB 00			     cmp bx, 0h
+     22	0111  74 1C			     je	noinst						     ; Si no está instalado,	    +
+     23				     saltamos
+     24
+     25	0113  B8 4B4A			     mov ax,4B4AH				     ; Comprobamos la firma para saber si   +
+     26				     está realmente instalado
+     27	0116  2E: 3B 47	FE		     cmp ax, cs:[bx-2]
+     28	011A  75 13			     jne noinst						     ; Si la firma es incorrecta,   +
+     29				     saltamos(no está instalado)
+     30	011C  BA 014Fr			     mov dx, OFFSET INST			     ; Guardamos el mensaje de ya instalado +
+     31				     en	DX
+     32
+     33	011F  80 F9 2F			     cmp cl , 2Fh				     ; Si no hay parámetros de	entrada,    +
+     34				     saltamos a	la impresión
+     35	0122  75 1B			     jne texto
+     36	0124  80 FD 44			     cmp ch, 44h					     ; Si el parámetro	es para	    +
+     37				     desinstalar , saltamos a la rutina
+     38	0127  75 16			     jne texto
+     39	0129  E9 028D			     jmp desinstalar				     ; En otro caso , saltamos a la	    +
+     40				     impresión
+     41	012C  EB 1C 90			     jmp fin
+     42
+     43	012F				     noinst:
+     44	012F  BA 0162r				     mov dx, OFFSET DINST	     ; Guardamos el mensaje de no instalado en DX
+     45	0132  80 F9 2F				     cmp cl , 2Fh			     ; Si no hay parámetros de	entrada,    +
+     46				     saltamos a	la impresión
+     47	0135  75 08				     jne texto
+     48	0137  80 FD 49				     cmp ch, 49h				     ; Si el parámetro	es para	    +
+     49				     instalar ,	saltamos a la rutina
+     50	013A  75 03				     jne texto
+     51	013C  E9 0233				     jmp instalar
+     52
+     53
+     54	013F				     texto:
+     55	013F  B4 09				     MOV AH, 9					     ;Imprimimos el mensaje de	    +
+     56				     instalado o no instalado
+     57	0141  CD 21				     INT 21h
+Turbo Assembler	 Version 2.0	    04/20/19 22:41:01	    Page 2
+p4a.asm
+
+
+
+     58
+     59	0143  BA 0178r				     MOV DX, OFFSET MENSAJE	     ; Imprimimos el resto y salimos
+     60	0146  B4 09				     MOV AH, 9
+     61	0148  CD 21				     INT 21h
+     62
+     63	014A				     fin:
+     64	014A  B8 4C00				     MOV AX, 4C00H
+     65	014D  CD 21				     INT 21H
+     66
+     67				     ; Variables globales
+     68	014F  44 52 49 56 45 52	20+  INST DB "DRIVER INSTALADO",13,10,'$'
+     69	      49 4E 53 54 41 4C	41+
+     70	      44 4F 0D 0A 24
+     71	0162  44 52 49 56 45 52	20+  DINST DB "DRIVER NO INSTALADO",13,10,'$'
+     72	      4E 4F 20 49 4E 53	54+
+     73	      41 4C 41 44 4F 0D	0A+
+     74	      24
+     75	0178  47 52 55 50 4F 20	31+  MENSAJE DB	"GRUPO 12, LUCIA RIVAS Y DANIEL	SANTO-TOMAS",13,10,"EJECUTAR CON /I PARA INSTALAR EL+
+     76	      32 2C 20 4C 55 43	49+  DRIVER Y CON /D PARA DESINSTALARLO",13,10,'$'
+     77	      41 20 52 49 56 41	53+
+     78	      20 59 20 44 41 4E	49+
+     79	      45 4C 20 53 41 4E	54+
+     80	      4F 2D 54 4F 4D 41	53+
+     81	      0D 0A 45 4A 45 43	55+
+     82	      54 41 52 20 43 4F	4E+
+     83	      20 2F 49 20 50 41	52+
+     84	      41 20 49 4E 53 54	41+
+     85	      4C 41 52 20 45 4C	20+
+     86	      44 52 49 56 45 52	20+
+     87	      59 20 43 4F 4E 20	2F+
+     88	      44 20 50 41 52 41	20+
+     89	      44 45 53 49 4E 53	54+
+     90	      41 4C 41 52 4C 4F	0D+
+     91	      0A 24
+     92	01EA  0100*(??)		     INVERSA DB	256 dup	(?)
+     93	02EA  4C 4D 4E 4F 50 51	52+  MATRIZ_POLIBIO DB 'LMNOPQ', 'RSTUVW', 'XYZ012','345678', '9ABCDE',	'FGHIJK'
+     94	      53 54 55 56 57 58	59+
+     95	      5A 30 31 32 33 34	35+
+     96	      36 37 38 39 41 42	43+
+     97	      44 45 46 47 48 49	4A+
+     98	      4B
+     99				     ; Rutina de servicio a la interrupción
+    100	030E			     rsi PROC FAR
+    101
+    102	030E  50 56 51 53 52		     push ax si	cx bx dx						     ; Guardamos los+
+    103				     registros
+    104
+    105
+    106	0313  80 FC 11			     cmp AH, 11H
+    107	0316  74 24			     je	once
+    108	0318  80 FC 10			     cmp AH, 10h
+    109	031B  75 4F			     jne final
+    110
+    111	031D  8B DA			     mov bx,dx
+    112	031F  8A 17			     mov dl, ds:[bx]
+    113	0321  B6 00			     mov dh, 0h
+    114	0323  8B F2			     mov si,dx
+Turbo Assembler	 Version 2.0	    04/20/19 22:41:01	    Page 3
+p4a.asm
+
+
+
+    115	0325  03 F6			     add si, si
+    116	0327  2E: 8A 94	01EAr		     mov dl ,INVERSA[si]
+    117	032C  B4 02			     mov ah, 2				     ; Imprimimos el caracter por pantalla
+    118	032E  CD 21			     int 21h
+    119
+    120	0330  2E: 8A 94	01EBr		     mov dl ,INVERSA[si+1]
+    121	0335  B4 02			     mov ah, 2				     ; Imprimimos el caracter por pantalla
+    122	0337  CD 21			     int 21h
+    123	0339  EB 31 90			     jmp final
+    124
+    125	033C				     once:
+    126	033C  8B DA				     mov bx,dx
+    127	033E					     bucle:
+    128	033E  8A 17					     mov dl, ds:[bx]	     ; Guardamos los caracteres	a traducir
+    129	0340  43					     inc bx
+    130	0341  8A 37					     mov dh, ds:[bx]
+    131	0343  43					     inc bx
+    132	0344  80 FA 24					     cmp dl, 24h			     ; Si en dl	está el dolar,	    +
+    133				     salta a fin
+    134	0347  74 23					     je	final
+    135	0349  80 EA 30					     sub dl, 30h			     ; Pasa los	numeros	de ascii a  +
+    136				     decimal
+    137	034C  80 EE 30					     sub dh, 30h
+    138	034F  FE CA					     dec dl				     ; restamos	uno para hacer los  +
+    139				     cálculos
+    140	0351  FE CE					     dec dh
+    141
+    142	0353  8A C2					     mov al, dl				     ; Multiplicamos la	fila por 6 y+
+    143				     la	sumamos	a la columna
+    144	0355  B1 06					     mov cl, 6h
+    145	0357  F6 E1					     mul cl
+    146	0359  8A D6					     mov dl, dh
+    147	035B  B6 00					     mov dh, 0h
+    148	035D  03 C2					     add ax, dx
+    149	035F  8B F0					     mov si, ax				     ; Se guarda el resultado en si
+    150
+    151	0361  2E: 8A 94	02EAr				     mov dl, MATRIZ_POLIBIO[si]		     ; Accedemos a la posición	de  +
+    152				     la	matriz dada por	si, y guardamos	su contenido en	dl (es un caracter ascii)
+    153
+    154	0366  B4 02					     mov ah, 2				     ; Imprimimos el caracter por   +
+    155				     pantalla
+    156	0368  CD 21					     int 21h
+    157
+    158	036A  EB D2					     jmp bucle
+    159	036C				     final:
+    160
+    161	036C  5A 5B 59 5E 58		     pop dx bx cx si ax
+    162	0371  CF			     iret
+    163	0372			     rsi ENDP
+    164
+    165
+    166	0372			     instalar PROC FAR
+    167
+    168	0372  BE 0000			     mov si, 0h
+    169	0375  B0 31			     mov al, 31h
+    170	0377  B4 31			     mov ah, 31h
+    171	0379				     bucle2:
+Turbo Assembler	 Version 2.0	    04/20/19 22:41:01	    Page 4
+p4a.asm
+
+
+
+    172	0379  BB 0000				     mov bx, 0h
+    173	037C  2E: 8A 9C	02EAr			     mov bl, MATRIZ_POLIBIO[si]			     ; Guardamos la letra cuya	    +
+    174				     codificación vamos a guardar
+    175	0381  02 DB				     add bl, bl							     ; Multiplicamos+
+    176				     por dos, ya que por cada letra hay	dos numeros de un byte
+    177	0383  46				     inc si
+    178
+    179	0384  2E: 88 87	01EAr			     mov INVERSA[bx], al
+    180	0389  2E: 88 A7	01EBr			     mov INVERSA[bx+1],ah
+    181	038E  FE C0				     inc al
+    182	0390  3C 37				     cmp al, 37h
+    183	0392  75 E5				     jne bucle2
+    184	0394  80 FC 36				     cmp ah, 36h
+    185	0397  74 06				     je	fuera
+    186	0399  B0 31				     mov al, 31h
+    187	039B  FE C4				     inc ah
+    188	039D  EB DA				     jmp bucle2
+    189
+    190	039F			     fuera:
+    191
+    192	039F  B8 0000			     mov ax, 0
+    193	03A2  8E C0			     mov es, ax
+    194	03A4  B8 030Er			     mov ax, OFFSET rsi
+    195	03A7  8C CB			     mov bx, cs
+    196	03A9  FA			     cli
+    197	03AA  26: A3 015C		     mov es:[57h*4], ax
+    198	03AE  26: 89 1E	015E		     mov es:[57h*4+2], bx
+    199	03B3  FB			     sti
+    200	03B4  BA 0372r			     mov dx, OFFSET instalar
+    201	03B7  CD 27			     int 27h ; Acaba y deja residente ;	PSP, variables y rutina	rsi.
+    202
+    203	03B9			     instalar ENDP
+    204
+    205	03B9			     desinstalar PROC FAR
+    206	03B9  50 53 51 1E 06		     push ax bx	cx ds es
+    207
+    208	03BE  B9 0000			     mov cx, 0
+    209	03C1  8E D9			     mov ds, cx
+    210	03C3  8E 06 015E		     mov es, ds:[57h*4+2]
+    211	03C7  26: 8B 1E	002C		     mov bx, es:[2Ch]
+    212
+    213	03CC  B4 49			     mov ah, 49h
+    214	03CE  CD 21			     int 21h
+    215	03D0  8E C3			     mov es, bx
+    216	03D2  CD 21			     int 21h
+    217
+    218	03D4  FA			     cli
+    219	03D5  89 0E 015C		     mov ds:[57h*4], cx
+    220	03D9  89 0E 0102		     mov ds:[40h*4+2], cx
+    221	03DD  FB			     sti
+    222
+    223	03DE  07 1F 59 5B 58		     pop es ds cx bx ax
+    224
+    225	03E3  B8 4C00			     MOV AX, 4C00H
+    226	03E6  CD 21			     INT 21H
+    227
+    228
+Turbo Assembler	 Version 2.0	    04/20/19 22:41:01	    Page 5
+p4a.asm
+
+
+
+    229
+    230	03E8			     desinstalar ENDP
+    231
+    232	03E8			     codigo ENDS
+    233				     END inicio
+Turbo Assembler	 Version 2.0	    04/20/19 22:41:01	    Page 6
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "04/20/19"
+??FILENAME			  Text	 "p4a	  "
+??TIME				  Text	 "22:41:01"
+??VERSION			  Number 0200
+@CPU				  Text	 0101H
+@CURSEG				  Text	 CODIGO
+@FILENAME			  Text	 P4A
+@WORDSIZE			  Text	 2
+BUCLE				  Near	 CODIGO:033E
+BUCLE2				  Near	 CODIGO:0379
+DESINSTALAR			  Far	 CODIGO:03B9
+DINST				  Byte	 CODIGO:0162
+FIN				  Near	 CODIGO:014A
+FINAL				  Near	 CODIGO:036C
+FUERA				  Near	 CODIGO:039F
+INICIO				  Near	 CODIGO:0100
+INST				  Byte	 CODIGO:014F
+INSTALAR			  Far	 CODIGO:0372
+INVERSA				  Byte	 CODIGO:01EA
+MATRIZ_POLIBIO			  Byte	 CODIGO:02EA
+MENSAJE				  Byte	 CODIGO:0178
+NOINST				  Near	 CODIGO:012F
+ONCE				  Near	 CODIGO:033C
+RSI				  Far	 CODIGO:030E
+TEXTO				  Near	 CODIGO:013F
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+CODIGO				  16  03E8 Para	  none
+
