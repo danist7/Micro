@@ -32,34 +32,7 @@ INICIO PROC
 	MOV SP, 64 ; CARGA EL PUNTERO DE PILA CON EL VALOR MAS ALTO
 ; FIN DE LAS INICIALIZACIONES
 ; COMIENZO DEL PROGRAMA
-mov si, 0h
-	bucle:
-		mov bl, DATO[si]		; Guardamos los caracteres a traducir
-		inc si
-		mov bh, DATO[si]
-		inc si 
-		cmp bl, 24h				; Si en bl está el dolar, salta a fin
-		je fin
-		sub bl, 30h				; Pasa los numeros de ascii a decimal
-		sub bh, 30h
-		dec bl					; restamos uno para hacer los cálculos
-		dec bh
-		
-		mov al, bl				; Multiplicamos la fila por 6 y la sumamos a la columna
-		mov cl, 6h
-		mul cl
-		mov bl, bh
-		mov bh, 0h
-		add ax, bx				
-		mov bx, ax				; Se guarda el resultado en bx
-			
-		mov dl, MATRIZ_POLIBIO[bx]		; Accedemos a la posición de la matriz dada por bx, y guardamos su contenido en dl (es un caracter ascii)
-									
-		mov ah, 2 				; Imprimimos el caracter por pantalla
-		int 21h 
-			
-		jmp bucle
-	fin:
+	int 1Ch
 	
 ; FIN DEL PROGRAMA
 	MOV AX, 4C00H

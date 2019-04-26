@@ -15,7 +15,7 @@ inicio:
 	
 	mov ax, 0
 	mov es, ax
-	mov bx, es:[ 57h*4 ]			;Comprobamos si el driver está instalado
+	mov bx, es:[57h*4]			;Comprobamos si el driver está instalado
 	cmp bx, 0h
 	je noinst						; Si no está instalado, saltamos	
 	
@@ -26,18 +26,18 @@ inicio:
 	
 	cmp cl , 2Fh					; Si no hay parámetros de entrada, saltamos a la impresión
 	jne texto
-	cmp ch, 44h						; Si el parámetro es para desinstalar , saltamos a la rutina	
-	jne texto
-	jmp desinstalar					; En otro caso , saltamos a la impresión 
-	jmp fin
+	cmp ch, 44h						; Si el parámetro no es para desinstalar , saltamos a la impresión 
+	jne texto						; En otro caso , saltamos a la rutina
+	jmp desinstalar					
+	
 	
 	noinst:
 		mov dx, OFFSET DINST 		; Guardamos el mensaje de no instalado en DX
 		cmp cl , 2Fh				; Si no hay parámetros de entrada, saltamos a la impresión
 		jne texto
-		cmp ch, 49h					; Si el parámetro es para instalar , saltamos a la rutina	
-		jne texto
-		jmp instalar
+		cmp ch, 49h					; Si el parámetro no es para instalar , saltamos a texto	
+		jne texto					
+		jmp instalar				; En otro caso , saltamos a la rutina
 		
 		
 	texto:
@@ -55,8 +55,8 @@ inicio:
 ; Variables globales
 INST DB "DRIVER INSTALADO",13,10,'$'
 DINST DB "DRIVER NO INSTALADO",13,10,'$'
-MENSAJE DB "GRUPO 12, LUCIA RIVAS Y DANIEL SANTO-TOMAS",13,10,"EJECUTAR CON /I PARA INSTALAR EL DRIVER Y CON /D PARA DESINSTALARLO",13,10,'$'
-INVERSA DB 256 dup (?)
+MENSAJE DB "GRUPO 26, LUCIA RIVAS Y DANIEL SANTO-TOMAS",13,10,"EJECUTAR CON /I PARA INSTALAR EL DRIVER Y CON /D PARA DESINSTALARLO",13,10,'$'
+INVERSA DB 256 dup (?) 
 MATRIZ_POLIBIO DB 'LMNOPQ', 'RSTUVW', 'XYZ012','345678', '9ABCDE', 'FGHIJK'
 ; Rutina de servicio a la interrupción
 rsi PROC FAR
@@ -69,18 +69,24 @@ rsi PROC FAR
 	cmp AH, 10h
 	jne final
 	
-	mov bx,dx
-	mov dl, ds:[bx]	
-	mov dh, 0h
 	mov si,dx
-	add si, si
-	mov dl ,INVERSA[si]
-	mov ah, 2 				; Imprimimos el caracter por pantalla
-	int 21h
-
-	mov dl ,INVERSA[si+1]
-	mov ah, 2 				; Imprimimos el caracter por pantalla
-	int 21h
+	mov bh, 0h
+	diez:
+		mov bl, ds:[si]
+		inc si
+		cmp bl, 24h				; Si en dl está el dolar, salta a fin
+		je final
+		add bx, bx				; Multiplicamos por 2, hay dos elementos por posición
+		
+		mov dl, INVERSA[bx+1]		; Accedemos al primer número y lo imprimimos
+		mov ah, 2 				; Imprimimos el caracter por pantalla
+		int 21h 
+		
+		mov dl, INVERSA[bx]	; Accedemos al segundo número y lo imprimimos
+		mov ah, 2 				; Imprimimos el caracter por pantalla
+		int 21h 
+		jmp diez
+		
 	jmp final
 	
 	once:
@@ -170,15 +176,13 @@ desinstalar PROC FAR
 	
 	cli
 	mov ds:[57h*4], cx
-	mov ds:[40h*4+2], cx
+	mov ds:[57h*4+2], cx
 	sti
 	
 	pop es ds cx bx ax
 	
 	MOV AX, 4C00H
-	INT 21H
-	
-	
+	INT 21H	
 	
 desinstalar ENDP
 

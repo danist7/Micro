@@ -5,7 +5,7 @@
 DATOS SEGMENT
 	MATRIZ_POLIBIO DB 'LMNOPQ', 'RSTUVW', 'XYZ012','345678', '9ABCDE', 'FGHIJK'
 	DATO DB '15141164536414','$'
-	DATO2 DB 53H
+	DATO2 DB 'POLIBIO','$'
 DATOS ENDS
 ;**************************************************************************
 ; DEFINICION DEL SEGMENTO DE PILA
@@ -33,6 +33,18 @@ INICIO PROC
 	MOV SP, 64 ; CARGA EL PUNTERO DE PILA CON EL VALOR MAS ALTO
 ; FIN DE LAS INICIALIZACIONES
 ; COMIENZO DEL PROGRAMA
+	
+	
+
+	
+	mov ah,11h
+	mov dx, OFFSET DATO
+	int 57h
+	
+	mov dl, 0Ah										
+	mov ah, 2 				; Imprimimos el caracter por pantalla
+	int 21h 
+	
 	mov ah,10h
 	mov dx, OFFSET DATO2
 	int 57h
